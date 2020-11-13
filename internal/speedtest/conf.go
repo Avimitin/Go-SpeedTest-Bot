@@ -54,7 +54,7 @@ func configExistTest() bool {
 }
 
 func Ping(h *Host) bool {
-	resp, err := web.Get(fmt.Sprintf("http://%s:%d", h.IP, h.Port))
+	resp, err := web.Get(fmt.Sprintf("http://%s:%d/getversion", h.IP, h.Port))
 	if err != nil {
 		log.Printf("[PingError]Unable to connect to backend")
 		return false
