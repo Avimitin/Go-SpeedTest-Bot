@@ -10,6 +10,8 @@ import (
 	"os"
 )
 
+// GetHost will fetch local ini config file information
+// If method can't find any config file it will try to fetch environmental variable "SPT_BOT_PATH"
 func GetHost() *Host {
 	if !configExistTest() {
 		log.Printf("[ConfigError]No enough config")
@@ -53,6 +55,7 @@ func configExistTest() bool {
 	return match == 1
 }
 
+// Ping will test if the given host is accessible or not
 func Ping(h *Host) bool {
 	resp, err := web.Get(fmt.Sprintf("http://%s:%d/getversion", h.IP, h.Port))
 	if err != nil {
