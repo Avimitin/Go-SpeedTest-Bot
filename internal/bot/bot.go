@@ -20,7 +20,7 @@ func loadConf() *Conf {
 func NewBot() *B {
 	bot, err := tgbotapi.NewBotAPI(loadConf().token)
 	if err != nil {
-		log.Println("[NewBotError]", err)
+		log.Println("[NewBotError]Token", err)
 		os.Exit(-1)
 	}
 	return bot
