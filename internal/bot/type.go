@@ -14,5 +14,10 @@ type CMDFunc func(*B, *M)
 type CMD = map[string]CMDFunc
 
 var Commands = CMD{
-	"/Start": cmdStart,
+	"start":    cmdStart,
+	"ping":     cmdPing,
+	"status":   cmdStatus,
+	"read_sub": cmdReadSub,
+	"result":   cmdResult,
+	"run_url":  cmdStartTestWithURL,
 }
