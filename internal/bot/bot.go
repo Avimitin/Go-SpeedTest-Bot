@@ -31,3 +31,16 @@ func SendT(bot *B, cid int64, text string) {
 		log.Println("SendError", err)
 	}
 }
+
+func CMDHandler(bot *B, msg *M) {
+	if msg.IsCommand() {
+		if cmd, ok := Commands[msg.Text]; ok {
+			cmd(bot, msg)
+		}
+	}
+}
+
+func cmdStart(b *B, m *M) {
+	text := "Here is a bot who can help you manage all your proxy."
+	SendT(b, m.Chat.ID, text)
+}
