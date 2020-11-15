@@ -6,5 +6,5 @@ This project is used to testing server connection with telegram bot support.
 
 ## Todo
 
-- [ ] Connect to test backend
-- [ ] Bot support
+- [x] Connect to test backend
+- [x] Bot support
