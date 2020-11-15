@@ -9,3 +9,10 @@ type Conf struct {
 
 type B = tgbotapi.BotAPI
 type M = tgbotapi.Message
+
+type CMDFunc func(*B, *M)
+type CMD = map[string]CMDFunc
+
+var Commands = CMD{
+	"/Start": cmdStart,
+}
