@@ -35,6 +35,15 @@ func SendT(bot *B, cid int64, text string) {
 	}
 }
 
+func SendP(bot *B, cid int64, text string, format string) {
+	msg := tgbotapi.NewMessage(cid, text)
+	msg.ParseMode = format
+	_, err := bot.Send(msg)
+	if err != nil {
+		log.Println("SendError", err)
+	}
+}
+
 func CMDHandler(bot *B, msg *M) {
 	if msg.IsCommand() {
 		if cmd, ok := Commands[msg.Command()]; ok {
@@ -145,4 +154,18 @@ func cmdStartTestWithURL(b *B, m *M) {
 	cfg := speedtest.NewStartConfigs("ST_ASYNC", "TCP_PING", nodes)
 	speedtest.StartTest(speedtest.GetHost(), cfg)
 	SendT(b, m.Chat.ID, "Test started, you can use /result to check latest result.")
+}
+
+func cmdListSubs(b *B, m *M) {
+	subsFile := config.GetSubsFile()
+	keys := subsFile.Section("").KeyStrings()
+	if len(keys) == 0 {
+		SendT(b, m.Chat.ID, "There is no subscriptions url in storage")
+		return
+	}
+	var text string = "<b>Your subscriptions</b>:\n"
+	for _, k := range keys {
+		text += fmt.Sprintf("* <a href=\"%s\">%s</a>\n", subsFile.Section("").Key(k).String(), k)
+	}
+	SendP(b, m.Chat.ID, text, "html")
 }
