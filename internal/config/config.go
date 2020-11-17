@@ -21,12 +21,15 @@ func CFGExistTest() bool {
 		}
 	}
 	var match int
+	cfgs := []string{"host.ini", "bot.ini", "subs.ini"}
 	for _, file := range files {
-		if fname := file.Name(); fname == "host.ini" || fname == "bot.ini" {
-			match++
+		for _, cfg := range cfgs {
+			if file.Name() == cfg {
+				match++
+			}
 		}
 	}
-	return match == 2
+	return match == len(cfgs)
 }
 
 // GetHostFile return parsing host configuration file
