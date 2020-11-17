@@ -13,8 +13,8 @@ func TestNewBot(t *testing.T) {
 func NewMsg() *M {
 	return &tgbotapi.Message{
 		Chat:     &tgbotapi.Chat{ID: 649191333},
-		Text:     "/default OxygenProxy",
-		Entities: &[]tgbotapi.MessageEntity{{Offset: 0, Type: "bot_command", Length: 7}},
+		Text:     "/set_def_mode -m SPET",
+		Entities: &[]tgbotapi.MessageEntity{{Offset: 0, Type: "bot_command", Length: 13}},
 	}
 }
 
@@ -28,4 +28,8 @@ func TestCmdList(t *testing.T) {
 
 func TestCMDSelectDef(t *testing.T) {
 	cmdSelectDefaultSub(NewBot(), NewMsg())
+}
+
+func TestSetDefMode(t *testing.T) {
+	cmdSetDefaultModeAndMethod(NewBot(), NewMsg())
 }

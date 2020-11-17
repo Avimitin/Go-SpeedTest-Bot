@@ -79,7 +79,7 @@ func cmdStatus(b *B, m *M) {
 }
 
 func cmdReadSub(b *B, m *M) {
-	if len(m.Text) == len(m.Command()) {
+	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) != 3 {
 		SendT(b, m.Chat.ID, "Use case(Only single link is supported):\n/read_sub https://xxx.com")
 		return
 	}
@@ -153,7 +153,7 @@ func startTestWithURL(b *B, m *M, url string, method string, mode string) {
 }
 
 func parseMsgText(b *B, m *M) map[string]string {
-	if len(m.Text) == len(m.Command()) {
+	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) != 3 {
 		SendT(b, m.Chat.ID, "Require subscriptions url.\n"+
 			"Use case:/run_url -u https://example.com -M TCP_PING -m ST_ASYNC (all in upper case)\n")
 		return nil
@@ -186,7 +186,7 @@ var Def *DefaultConfig = &DefaultConfig{
 }
 
 func cmdSelectDefaultSub(b *B, m *M) {
-	if len(m.Text) == len(m.Command()) || len(strings.Fields(m.Text)) != 2 {
+	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) != 3 {
 		SendT(b, m.Chat.ID, "Require one arguments. \n Use case: /default xxx")
 		return
 	}
@@ -201,4 +201,20 @@ func cmdSelectDefaultSub(b *B, m *M) {
 	sub := subsFile.Section("").Key(Def.Remarks).String()
 	Def.Url = sub
 	SendT(b, m.Chat.ID, "Default has set to "+Def.Remarks+"\n"+"url: "+sub)
+}
+
+func cmdSetDefaultModeAndMethod(b *B, m *M) {
+	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) != 3 {
+		SendT(b, m.Chat.ID, "Require mode or method.\n"+
+			"Use case:/set_def_mode -M TCP_PING -m ST_ASYNC (all in upper case)\n")
+		return
+	}
+	args := parseMsgText(b, m)
+	Def.Mode = args["-M"]
+	Def.Method = args["-m"]
+	SendT(b, m.Chat.ID, "Default test mode now is "+Def.Mode+"\nDefault test method now is "+Def.Method)
+}
+
+func cmdRunDefault(b *B, m *M) {
+	startTestWithURL(b, m, Def.Url, Def.Method, Def.Mode)
 }
