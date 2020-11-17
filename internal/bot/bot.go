@@ -3,6 +3,7 @@ package bot
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"go-speedtest-bot/internal/ArgsParser"
 	"go-speedtest-bot/internal/config"
 	"go-speedtest-bot/internal/speedtest"
 	"log"
@@ -127,11 +128,7 @@ func cmdResult(b *B, m *M) {
 	SendT(b, m.Chat.ID, "No result yet")
 }
 
-func cmdStartTestWithURL(b *B, m *M) {
-	if len(m.Text) == len(m.Command()) {
-		SendT(b, m.Chat.ID, "Require subscriptions url.\nUse case:/run_url https://xxx")
-		return
-	}
+func startTestWithURL(b *B, m *M, url string, method string, mode string) {
 	result, err := speedtest.GetStatus(speedtest.GetHost())
 	if err != nil {
 		SendT(b, m.Chat.ID, err.Error())
@@ -145,15 +142,28 @@ func cmdStartTestWithURL(b *B, m *M) {
 		SendT(b, m.Chat.ID, "There is still a test running, please wait for all works done.")
 		return
 	}
-	url := strings.Fields(m.Text)[1]
 	nodes, err := speedtest.ReadSubscriptions(speedtest.GetHost(), url)
 	if err != nil {
 		SendT(b, m.Chat.ID, err.Error())
 		return
 	}
-	cfg := speedtest.NewStartConfigs("ST_ASYNC", "TCP_PING", nodes)
+	cfg := speedtest.NewStartConfigs(method, mode, nodes)
 	speedtest.StartTest(speedtest.GetHost(), cfg)
 	SendT(b, m.Chat.ID, "Test started, you can use /result to check latest result.")
+}
+
+func parseMsgText(b *B, m *M) map[string]string {
+	if len(m.Text) == len(m.Command()) {
+		SendT(b, m.Chat.ID, "Require subscriptions url.\n"+
+			"Use case:/run_url -u https://example.com -M TCP_PING -m ST_ASYNC (all in upper case)\n")
+		return nil
+	}
+	return ArgsParser.Parser(CfgFlags, m.Text)
+}
+
+func cmdStartTestWithURL(b *B, m *M) {
+	args := parseMsgText(b, m)
+	startTestWithURL(b, m, args["-u"], args["-M"], args["-m"])
 }
 
 func cmdListSubs(b *B, m *M) {
@@ -168,4 +178,27 @@ func cmdListSubs(b *B, m *M) {
 		text += fmt.Sprintf("* <a href=\"%s\">%s</a>\n", subsFile.Section("").Key(k).String(), k)
 	}
 	SendP(b, m.Chat.ID, text, "html")
+}
+
+var Def *DefaultConfig = &DefaultConfig{
+	Mode:   "TCP_PING",
+	Method: "ST_ASYNC",
+}
+
+func cmdSelectDefaultSub(b *B, m *M) {
+	if len(m.Text) == len(m.Command()) || len(strings.Fields(m.Text)) != 2 {
+		SendT(b, m.Chat.ID, "Require one arguments. \n Use case: /default xxx")
+		return
+	}
+
+	def := strings.Fields(m.Text)[1]
+	subsFile := config.GetSubsFile()
+	if !subsFile.Section("").HasKey(def) {
+		SendT(b, m.Chat.ID, "Remarks not found.")
+		return
+	}
+	Def.Remarks = def
+	sub := subsFile.Section("").Key(Def.Remarks).String()
+	Def.Url = sub
+	SendT(b, m.Chat.ID, "Default has set to "+Def.Remarks+"\n"+"url: "+sub)
 }

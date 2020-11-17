@@ -22,3 +22,16 @@ var Commands = CMD{
 	"run_url":   cmdStartTestWithURL,
 	"list_subs": cmdListSubs,
 }
+
+var CfgFlags = map[string]string{
+	"-u": "exp",
+	"-M": "TCP_PING",
+	"-m": "ST_ASYNC",
+}
+
+type DefaultConfig struct {
+	Remarks string
+	Url     string
+	Method  string
+	Mode    string
+}
