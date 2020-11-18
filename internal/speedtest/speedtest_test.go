@@ -45,5 +45,5 @@ func TestStartTest(t *testing.T) {
 	}
 	sCFG := NewStartConfigs("ST_ASYNC", "TCP_PING", subs)
 	sCFG.Group = ""
-	StartTest(GetHost(), sCFG)
+	StartTest(GetHost(), sCFG, make(chan string))
 }
