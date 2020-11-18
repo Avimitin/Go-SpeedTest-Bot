@@ -33,8 +33,10 @@ var CfgFlags = map[string]string{
 }
 
 type DefaultConfig struct {
-	Remarks string
-	Url     string
-	Method  string
-	Mode    string
+	Remarks  string
+	Url      string
+	Method   string
+	Mode     string
+	Interval int
+	Chat     int64
 }
