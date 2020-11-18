@@ -35,9 +35,14 @@ func Post(url string, data map[string][]string) ([]byte, error) {
 	return content, nil
 }
 
-// JSONPost will post a JSON request with the url and data given by user
+// JSONPost will post a JSON request with the url and data given by user. it will return error if timeout 30 seconds.
 func JSONPost(url string, data []byte) ([]byte, error) {
-	c := GetClient(30)
+	return JSONPostWithTimeout(url, data, 30)
+}
+
+// JSONPostWithTimeout will post a JSON request with the url and data given by user, it will return error if reach time limit.
+func JSONPostWithTimeout(url string, data []byte, timeout int) ([]byte, error) {
+	c := GetClient(timeout)
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(data))
 	if err != nil {
 		log.Printf("[WebPostError]%v", err)
