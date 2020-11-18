@@ -148,7 +148,7 @@ func startTestWithURL(b *B, m *M, url string, method string, mode string) {
 		return
 	}
 	cfg := speedtest.NewStartConfigs(method, mode, nodes)
-	speedtest.StartTest(speedtest.GetHost(), cfg)
+	go speedtest.StartTest(speedtest.GetHost(), cfg, make(chan string))
 	SendT(b, m.Chat.ID, "Test started, you can use /result to check latest result.")
 }
 
