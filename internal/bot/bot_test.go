@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"testing"
 )
@@ -32,4 +33,15 @@ func TestCMDSelectDef(t *testing.T) {
 
 func TestSetDefMode(t *testing.T) {
 	cmdSetDefaultModeAndMethod(NewBot(), NewMsg())
+}
+
+func TestSchedule(t *testing.T) {
+	Def.Interval = -1
+	Def.Url = "https://oxygenproxy.com"
+	Def.Chat = 649191333
+	err := start(NewBot())
+	if err != nil {
+		fmt.Println(err)
+		t.Fail()
+	}
 }
