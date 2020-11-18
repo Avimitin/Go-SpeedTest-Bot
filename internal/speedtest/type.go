@@ -18,7 +18,8 @@ type Version struct {
 }
 
 type Status struct {
-	State string
+	State string `json:"status"`
+	Error string `json:"error"`
 }
 
 type SubscriptionResp struct {
