@@ -8,6 +8,7 @@ import (
 	"go-speedtest-bot/internal/speedtest"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -111,7 +112,7 @@ func formatResult(r *speedtest.Result) string {
 	text += "\n"
 	for _, res := range r.Result {
 		text += fmt.Sprintf(
-			"%s: | ls: %.2f%% | lp: %.2f ms | gp: %.2f ms", res.Remarks, res.Loss*100, res.Ping*1000, res.GPing*1000)
+			"%s: | ls: %.2f%% | lp: %.2f ms | gp: %.2f ms\n", res.Remarks, res.Loss*100, res.Ping*1000, res.GPing*1000)
 	}
 	return text
 }
@@ -187,7 +188,7 @@ var Def *DefaultConfig = &DefaultConfig{
 
 func cmdSelectDefaultSub(b *B, m *M) {
 	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) != 3 {
-		SendT(b, m.Chat.ID, "Require one arguments. \n Use case: /default xxx")
+		SendT(b, m.Chat.ID, "Require one arguments. \n Use case: /set_default xxx")
 		return
 	}
 
@@ -217,4 +218,56 @@ func cmdSetDefaultModeAndMethod(b *B, m *M) {
 
 func cmdRunDefault(b *B, m *M) {
 	startTestWithURL(b, m, Def.Url, Def.Method, Def.Mode)
+}
+
+func cmdSchedule(b *B, m *M) {
+	if len(m.Text)-1 == len(m.Command()) {
+		SendT(b, m.Chat.ID, "Require parameters like: start/stop/status\n"+
+			"Use case: /schedule start")
+		return
+	}
+	arg := strings.Fields(m.Text)[1]
+	switch arg {
+	case "start":
+		if Def.Chat == 0 || Def.Url == "" || Def.Remarks == "" {
+			SendT(b, m.Chat.ID, "You don't set up default config yet. Please use /set_default to set your config.")
+			return
+		}
+
+		if started {
+			SendT(b, m.Chat.ID, "Schedule jobs has started")
+			return
+		}
+		started = true
+		go start(b)
+	case "stop":
+		pause = true
+		started = false
+		SendT(b, m.Chat.ID, "Schedule jobs will stop in next loop.")
+	case "status":
+		if started {
+			SendT(b, m.Chat.ID, "jobs running.")
+		}
+		SendT(b, m.Chat.ID, "There is no jobs running in the background.")
+	default:
+		SendT(b, m.Chat.ID, "Unknown parameter.")
+	}
+}
+
+func cmdSetInterval(b *B, m *M) {
+	if len(m.Text)-1 == len(m.Command()) {
+		SendT(b, m.Chat.ID, "Seconds are require as parameters\n"+
+			"Use case: /set_interval 1\n"+
+			"This will let the schedule task to start every 1 seconds.\n"+
+			"But because of the python backend, too frequent request will cause performance problem. We recommended you use 300 second as parameter or more.")
+		return
+	}
+	arg := strings.Fields(m.Text)[1]
+	intArg, err := strconv.Atoi(arg)
+	if err != nil {
+		SendT(b, m.Chat.ID, "Unexpected value: "+arg)
+		return
+	}
+	SetInterval(intArg)
+	SendT(b, m.Chat.ID, "Interval has set to "+arg+"s")
 }

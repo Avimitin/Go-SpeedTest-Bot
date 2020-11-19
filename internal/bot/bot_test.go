@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"testing"
 )
@@ -14,8 +13,8 @@ func TestNewBot(t *testing.T) {
 func NewMsg() *M {
 	return &tgbotapi.Message{
 		Chat:     &tgbotapi.Chat{ID: 649191333},
-		Text:     "/set_def_mode -m SPET",
-		Entities: &[]tgbotapi.MessageEntity{{Offset: 0, Type: "bot_command", Length: 13}},
+		Text:     "/schedult start",
+		Entities: &[]tgbotapi.MessageEntity{{Offset: 0, Type: "bot_command", Length: 9}},
 	}
 }
 
@@ -39,9 +38,9 @@ func TestSchedule(t *testing.T) {
 	Def.Interval = -1
 	Def.Url = "https://oxygenproxy.com"
 	Def.Chat = 649191333
-	err := start(NewBot())
-	if err != nil {
-		fmt.Println(err)
-		t.Fail()
-	}
+	go start(NewBot())
+}
+
+func TestCMDSchedule(t *testing.T) {
+	cmdSchedule(NewBot(), NewMsg())
 }
