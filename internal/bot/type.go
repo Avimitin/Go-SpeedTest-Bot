@@ -21,9 +21,11 @@ var Commands = CMD{
 	"result":       cmdResult,
 	"run_url":      cmdStartTestWithURL,
 	"list_subs":    cmdListSubs,
-	"default":      cmdSelectDefaultSub,
+	"set_default":  cmdSelectDefaultSub,
 	"set_def_mode": cmdSetDefaultModeAndMethod,
 	"run_def":      cmdRunDefault,
+	"schedule":     cmdSchedule,
+	"set_interval": cmdSetInterval,
 }
 
 var CfgFlags = map[string]string{
