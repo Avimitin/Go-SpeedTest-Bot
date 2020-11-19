@@ -7,15 +7,15 @@ import (
 	"time"
 )
 
-var pause bool
+var pause, started bool
 
-func start(b *B) error {
+func start(b *B) {
 	if pause {
 		pause = false
 	}
 	log.Println("[Schedule]New loop started")
 	request(b)
-	return nil
+	log.Println("[Schedule]loop stopped")
 }
 
 func fetchResult() string {
