@@ -2,6 +2,7 @@ package speedtest
 
 import (
 	"fmt"
+	"os"
 	"testing"
 )
 
@@ -46,4 +47,22 @@ func TestStartTest(t *testing.T) {
 	sCFG := NewStartConfigs("ST_ASYNC", "TCP_PING", subs)
 	sCFG.Group = ""
 	StartTest(GetHost(), sCFG, make(chan string))
+}
+
+func NewConfig() []*SubscriptionResp {
+	sub, err := ReadSubscriptions(GetHost(), "")
+	if err != nil {
+		os.Exit(-1)
+	}
+	return sub
+}
+
+func TestIncludeRemarks(t *testing.T) {
+	newcfg := IncludeRemarks(NewConfig(), []string{"香港"})
+	fmt.Println(newcfg)
+}
+
+func TestExcludeRemarks(t *testing.T) {
+	newcfg := ExcludeRemarks(NewConfig(), []string{"剩余", "台湾", "香港"})
+	fmt.Println(newcfg)
 }
