@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"go-speedtest-bot/internal/web"
 	"log"
+	"strings"
 )
 
 // GetStatus is used for fetching backend status
@@ -83,4 +84,45 @@ func StartTest(h *Host, startCFG *StartConfigs, status chan string) {
 	} else {
 		status <- state.Error
 	}
+}
+
+// IncludeRemarks will select all the configs with the given remarks.
+func IncludeRemarks(configs []*SubscriptionResp, incRems []string) []*SubscriptionResp {
+	var newcfg []*SubscriptionResp
+	for _, e := range incRems {
+		for _, c := range configs {
+			if strings.Contains(c.Config.Remarks, e) {
+				newcfg = append(newcfg, c)
+			}
+		}
+	}
+	for _, n := range newcfg {
+		fmt.Printf("%+v\n", *n.Config)
+	}
+	return newcfg
+}
+
+func ExcludeRemarks(configs []*SubscriptionResp, excRem []string) []*SubscriptionResp {
+	incRems := IncludeRemarks(configs, excRem)
+	if incRems == nil {
+		return nil
+	}
+	var set1 = map[string]*SubscriptionResp{}
+	for _, i := range incRems {
+		set1[i.Config.Remarks] = i
+	}
+	var set2 = map[string]*SubscriptionResp{}
+	for _, c := range configs {
+		set2[c.Config.Remarks] = c
+	}
+	if len(set1) > len(set2) {
+		set1, set2 = set2, set1
+	}
+	var excludeCFG []*SubscriptionResp
+	for v := range set1 {
+		if _, ok := set2[v]; ok {
+			continue
+		}
+	}
+	return excludeCFG
 }
