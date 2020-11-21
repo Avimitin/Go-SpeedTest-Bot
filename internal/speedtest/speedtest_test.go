@@ -40,12 +40,11 @@ func TestGetResult(t *testing.T) {
 }
 
 func TestStartTest(t *testing.T) {
-	subs, err := ReadSubscriptions(GetHost(), "")
+	subs, err := ReadSubscriptions(GetHost(), "https://oxygenproxy.com/auth/register")
 	if err != nil {
 		t.Failed()
 	}
 	sCFG := NewStartConfigs("ST_ASYNC", "TCP_PING", subs)
-	sCFG.Group = ""
 	StartTest(GetHost(), sCFG, make(chan string))
 }
 
@@ -63,6 +62,8 @@ func TestIncludeRemarks(t *testing.T) {
 }
 
 func TestExcludeRemarks(t *testing.T) {
-	newcfg := ExcludeRemarks(NewConfig(), []string{"剩余", "台湾", "香港"})
-	fmt.Println(newcfg)
+	newcfg := ExcludeRemarks(NewConfig(), []string{"剩余", "台湾", "香港", "过期"})
+	for _, n := range newcfg {
+		fmt.Printf("%+v\n", n.Config.Remarks)
+	}
 }
