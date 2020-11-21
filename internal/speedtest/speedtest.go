@@ -15,7 +15,13 @@ func GetStatus(h *Host) (*Status, error) {
 		log.Printf("[WebGetError]Unable to connect to backend")
 		return nil, err
 	}
-	return &Status{State: string(resp)}, nil
+	var st *Status
+	err = json.Unmarshal(resp, &st)
+	if err != nil {
+		log.Printf("[JsonUnmarshall]Unable to unmarshal data")
+		return nil, err
+	}
+	return st, nil
 }
 
 // ReadSubscriptions return list of node information with the given subscription url.
@@ -99,6 +105,7 @@ func IncludeRemarks(configs []*SubscriptionResp, incRems []string) []*Subscripti
 	return newcfg
 }
 
+// ExcludeRemarks will select all the configs excluded the given remarks.
 func ExcludeRemarks(configs []*SubscriptionResp, excRem []string) []*SubscriptionResp {
 	incRems := IncludeRemarks(configs, excRem)
 	if incRems == nil {
