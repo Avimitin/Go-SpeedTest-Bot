@@ -26,6 +26,7 @@ var Commands = CMD{
 	"run_def":      cmdRunDefault,
 	"schedule":     cmdSchedule,
 	"set_interval": cmdSetInterval,
+	"set_exin":     cmdSetDefaultExcludeOrInclude,
 }
 
 var CfgFlags = map[string]string{
