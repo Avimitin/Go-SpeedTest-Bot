@@ -37,6 +37,7 @@ func SendT(bot *B, cid int64, text string) {
 	}
 }
 
+// SendP send parsed text message
 func SendP(bot *B, cid int64, text string, format string) {
 	msg := tgbotapi.NewMessage(cid, text)
 	msg.ParseMode = format
@@ -46,6 +47,42 @@ func SendP(bot *B, cid int64, text string, format string) {
 	}
 }
 
+// Launch is the robot's main methods. Calling this method will
+// enter a loop and continuously listen for messages.
+// If debug, bot will enable debug mode.
+// If logInfo, program will print all the message.
+// If clean, program will clean all the out of date message.
+func Launch(debug bool, logInfo bool, clean bool) {
+	bot := NewBot()
+	bot.Debug = debug
+	log.Println("Authorized on account", bot.Self.UserName)
+
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+	updates, err := bot.GetUpdatesChan(u)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	if clean {
+		log.Println("Cleaning mode on")
+		updates.Clear()
+		log.Println("message all clear.")
+		os.Exit(0)
+	}
+
+	for update := range updates {
+		if update.Message == nil {
+			continue
+		}
+		if logInfo {
+			log.Printf("[%s]%s", update.Message.From.UserName, update.Message.Text)
+		}
+		CMDHandler(bot, update.Message)
+	}
+}
+
+// CMDHandler handle all the command
 func CMDHandler(bot *B, msg *M) {
 	if msg.IsCommand() {
 		if cmd, ok := Commands[msg.Command()]; ok {
@@ -54,11 +91,13 @@ func CMDHandler(bot *B, msg *M) {
 	}
 }
 
+// cmd /start
 func cmdStart(b *B, m *M) {
 	text := "Here is a bot who can help you manage all your proxy."
 	SendT(b, m.Chat.ID, text)
 }
 
+// cmd /ping
 func cmdPing(b *B, m *M) {
 	connected := speedtest.Ping(speedtest.GetHost())
 	var text string
@@ -70,6 +109,7 @@ func cmdPing(b *B, m *M) {
 	SendT(b, m.Chat.ID, text)
 }
 
+// cmd /status
 func cmdStatus(b *B, m *M) {
 	result, err := speedtest.GetStatus(speedtest.GetHost())
 	if err != nil {
@@ -79,9 +119,10 @@ func cmdStatus(b *B, m *M) {
 	SendT(b, m.Chat.ID, "Status: "+result.State)
 }
 
+// cmd /read_sub
 func cmdReadSub(b *B, m *M) {
-	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) != 3 {
-		SendT(b, m.Chat.ID, "Use case(Only single link is supported):\n/read_sub https://xxx.com")
+	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) < 2 {
+		SendT(b, m.Chat.ID, "Use case(Only single link is supported):\n/read_sub https://example.com")
 		return
 	}
 	url := strings.Fields(m.Text)[1]
@@ -117,6 +158,7 @@ func formatResult(r *speedtest.Result) string {
 	return text
 }
 
+// cmd /result
 func cmdResult(b *B, m *M) {
 	result, err := speedtest.GetResult(speedtest.GetHost())
 	if err != nil {
@@ -125,11 +167,12 @@ func cmdResult(b *B, m *M) {
 	}
 	if fresult := formatResult(result); len(fresult) != 0 {
 		SendT(b, m.Chat.ID, fresult)
+		return
 	}
 	SendT(b, m.Chat.ID, "No result yet")
 }
 
-func startTestWithURL(b *B, m *M, url string, method string, mode string) {
+func startTestWithURL(b *B, m *M, url string, method string, mode string, include []string, exclude []string) {
 	result, err := speedtest.GetStatus(speedtest.GetHost())
 	if err != nil {
 		SendT(b, m.Chat.ID, err.Error())
@@ -148,25 +191,33 @@ func startTestWithURL(b *B, m *M, url string, method string, mode string) {
 		SendT(b, m.Chat.ID, err.Error())
 		return
 	}
+	if len(include) != 0 {
+		nodes = speedtest.IncludeRemarks(nodes, include)
+	}
+	if len(exclude) != 0 {
+		nodes = speedtest.ExcludeRemarks(nodes, exclude)
+	}
 	cfg := speedtest.NewStartConfigs(method, mode, nodes)
-	go speedtest.StartTest(speedtest.GetHost(), cfg, make(chan string))
+	go speedtest.StartTest(speedtest.GetHost(), cfg, make(chan string, 1))
 	SendT(b, m.Chat.ID, "Test started, you can use /result to check latest result.")
 }
 
-func parseMsgText(b *B, m *M) map[string]string {
-	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) != 3 {
-		SendT(b, m.Chat.ID, "Require subscriptions url.\n"+
-			"Use case:/run_url -u https://example.com -M TCP_PING -m ST_ASYNC (all in upper case)\n")
-		return nil
-	}
-	return ArgsParser.Parser(CfgFlags, m.Text)
+func parseMsgText(s string) map[string]string {
+	return ArgsParser.Parser(CfgFlags, s)
 }
 
+// cmd /run_url
 func cmdStartTestWithURL(b *B, m *M) {
-	args := parseMsgText(b, m)
-	startTestWithURL(b, m, args["-u"], args["-M"], args["-m"])
+	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) < 3 {
+		SendP(b, m.Chat.ID, "Require subscriptions url.\n"+
+			"Use case: <code>/run_url -u https://example.com -M TCP_PING -m ST_ASYNC</code>\n(all in upper case)", "HTML")
+		return
+	}
+	args := parseMsgText(m.Text)
+	startTestWithURL(b, m, args["-u"], args["-m"], args["-M"], []string{}, []string{})
 }
 
+// cmd /list_subs
 func cmdListSubs(b *B, m *M) {
 	subsFile := config.GetSubsFile()
 	keys := subsFile.Section("").KeyStrings()
@@ -186,9 +237,10 @@ var Def *DefaultConfig = &DefaultConfig{
 	Method: "ST_ASYNC",
 }
 
+// cmd /set_default
 func cmdSelectDefaultSub(b *B, m *M) {
-	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) != 3 {
-		SendT(b, m.Chat.ID, "Require one arguments. \n Use case: /set_default xxx")
+	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) < 2 {
+		SendT(b, m.Chat.ID, "Require one arguments. \nUse case: /set_default xxx")
 		return
 	}
 
@@ -201,29 +253,32 @@ func cmdSelectDefaultSub(b *B, m *M) {
 	Def.Remarks = def
 	sub := subsFile.Section("").Key(Def.Remarks).String()
 	Def.Url = sub
-	SendT(b, m.Chat.ID, "Default has set to "+Def.Remarks+"\n"+"url: "+sub)
+	SendP(b, m.Chat.ID, fmt.Sprintf("Default has set to <a href=\"%s\">%s</a>", Def.Url, Def.Remarks), "HTML")
 }
 
+// cmd /set_def_mode
 func cmdSetDefaultModeAndMethod(b *B, m *M) {
-	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) != 3 {
+	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) < 3 {
 		SendT(b, m.Chat.ID, "Require mode or method.\n"+
 			"Use case:/set_def_mode -M TCP_PING -m ST_ASYNC (all in upper case)\n")
 		return
 	}
-	args := parseMsgText(b, m)
+	args := parseMsgText(m.Text)
 	Def.Mode = args["-M"]
 	Def.Method = args["-m"]
 	SendT(b, m.Chat.ID, "Default test mode now is "+Def.Mode+"\nDefault test method now is "+Def.Method)
 }
 
+// cmd /run_def
 func cmdRunDefault(b *B, m *M) {
-	startTestWithURL(b, m, Def.Url, Def.Method, Def.Mode)
+	startTestWithURL(b, m, Def.Url, Def.Method, Def.Mode, Def.Include, Def.Exclude)
 }
 
+// cmd /schedule
 func cmdSchedule(b *B, m *M) {
 	if len(m.Text)-1 == len(m.Command()) {
-		SendT(b, m.Chat.ID, "Require parameters like: start/stop/status\n"+
-			"Use case: /schedule start")
+		SendP(b, m.Chat.ID, "Require parameters like: <code>start/stop/status</code>\n"+
+			"Use case: /schedule start", "HTML")
 		return
 	}
 	arg := strings.Fields(m.Text)[1]
@@ -254,8 +309,9 @@ func cmdSchedule(b *B, m *M) {
 	}
 }
 
+// cmd /set_interval
 func cmdSetInterval(b *B, m *M) {
-	if len(m.Text)-1 == len(m.Command()) {
+	if len(strings.Fields(m.Text)) < 2 {
 		SendT(b, m.Chat.ID, "Seconds are require as parameters\n"+
 			"Use case: /set_interval 1\n"+
 			"This will let the schedule task to start every 1 seconds.\n"+
@@ -270,4 +326,29 @@ func cmdSetInterval(b *B, m *M) {
 	}
 	SetInterval(intArg)
 	SendT(b, m.Chat.ID, "Interval has set to "+arg+"s")
+}
+
+// cmd /set_exin
+func cmdSetDefaultExcludeOrInclude(b *B, m *M) {
+	if args := strings.Fields(m.Text); len(args) > 2 {
+		method := args[1]
+		keys := args[2:]
+		if method == "exclude" {
+			Def.Exclude = make([]string, len(keys))
+			copy(Def.Exclude, keys)
+			SendT(b, m.Chat.ID, fmt.Sprintf("Default exclude has set to: %v", Def.Exclude))
+			return
+		}
+		if method == "include" {
+			Def.Include = make([]string, len(keys))
+			copy(Def.Include, keys)
+			SendT(b, m.Chat.ID, fmt.Sprintf("Default include has set to: %v", Def.Include))
+			return
+		}
+		SendT(b, m.Chat.ID, "Unknown method.")
+		return
+	}
+	SendP(b, m.Chat.ID, "Usage: /set_exin [exclude/include] keyword1 keyword2\n\n"+
+		"Use case: <code>/set_exin exclude 官网 剩余流量 台 香港</code>\n"+
+		"(Fuzz match is supported)", "html")
 }
