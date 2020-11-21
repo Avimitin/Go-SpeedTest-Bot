@@ -34,6 +34,7 @@ var CfgFlags = map[string]string{
 	"-m": "ST_ASYNC",
 }
 
+// DefaultConfig contains all the default speed test setting.
 type DefaultConfig struct {
 	Remarks  string
 	Url      string
@@ -41,4 +42,6 @@ type DefaultConfig struct {
 	Mode     string
 	Interval int
 	Chat     int64
+	Include  []string
+	Exclude  []string
 }
