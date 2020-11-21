@@ -96,9 +96,6 @@ func IncludeRemarks(configs []*SubscriptionResp, incRems []string) []*Subscripti
 			}
 		}
 	}
-	for _, n := range newcfg {
-		fmt.Printf("%+v\n", *n.Config)
-	}
 	return newcfg
 }
 
@@ -119,10 +116,13 @@ func ExcludeRemarks(configs []*SubscriptionResp, excRem []string) []*Subscriptio
 		set1, set2 = set2, set1
 	}
 	var excludeCFG []*SubscriptionResp
-	for v := range set1 {
-		if _, ok := set2[v]; ok {
-			continue
+	for k := range set1 {
+		if _, ok := set2[k]; ok {
+			delete(set2, k)
 		}
+	}
+	for _, v := range set2 {
+		excludeCFG = append(excludeCFG, v)
 	}
 	return excludeCFG
 }
