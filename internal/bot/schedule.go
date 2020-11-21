@@ -14,6 +14,7 @@ func start(b *B) {
 		pause = false
 	}
 	log.Println("[Schedule]New loop started")
+	started = true
 	request(b)
 	log.Println("[Schedule]loop stopped")
 }
@@ -34,24 +35,30 @@ func request(b *B) {
 		SendT(b, Def.Chat, err.Error())
 		return
 	}
-
+	if len(Def.Include) != 0 {
+		nodes = speedtest.IncludeRemarks(nodes, Def.Include)
+	}
+	if len(Def.Exclude) != 0 {
+		nodes = speedtest.ExcludeRemarks(nodes, Def.Exclude)
+	}
 	cfg := speedtest.NewStartConfigs(Def.Method, Def.Mode, nodes)
 	host := speedtest.GetHost()
 	stChan := make(chan string)
-	go speedtest.StartTest(host, cfg, stChan)
-	select {
-	case s := <-stChan:
-		if s == "done" {
-			SendT(b, Def.Chat, fetchResult())
-			wait(Def.Interval)
-			go speedtest.StartTest(host, cfg, stChan)
-		} else {
-			pause = true
-			log.Println("[SpeedTestError]" + s)
-			SendT(b, Def.Chat, s)
-		}
-		if pause {
-			return
+	for {
+		go speedtest.StartTest(host, cfg, stChan)
+		select {
+		case s := <-stChan:
+			if s == "done" {
+				SendT(b, Def.Chat, fetchResult())
+				wait(Def.Interval)
+			} else {
+				pause = true
+				log.Println("[SpeedTestError]" + s)
+				SendT(b, Def.Chat, s)
+			}
+			if pause {
+				return
+			}
 		}
 	}
 }
