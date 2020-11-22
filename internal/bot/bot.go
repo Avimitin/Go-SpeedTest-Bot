@@ -233,8 +233,9 @@ func cmdListSubs(b *B, m *M) {
 }
 
 var Def *DefaultConfig = &DefaultConfig{
-	Mode:   "TCP_PING",
-	Method: "ST_ASYNC",
+	Mode:     "TCP_PING",
+	Method:   "ST_ASYNC",
+	Interval: 300,
 }
 
 // cmd /set_default
@@ -254,6 +255,21 @@ func cmdSelectDefaultSub(b *B, m *M) {
 	sub := subsFile.Section("").Key(Def.Remarks).String()
 	Def.Url = sub
 	SendP(b, m.Chat.ID, fmt.Sprintf("Default has set to <a href=\"%s\">%s</a>", Def.Url, Def.Remarks), "HTML")
+}
+
+// cmd /set_chat
+func cmdSetDefaultChat(b *B, m *M) {
+	if len(strings.Fields(m.Text)) < 2 {
+		SendT(b, m.Chat.ID, "Send me a char room id")
+		return
+	}
+	val, err := strconv.ParseInt(strings.Fields(m.Text)[1], 10, 64)
+	if err != nil {
+		SendT(b, m.Chat.ID, err.Error())
+		return
+	}
+	Def.Chat = val
+	SendT(b, m.Chat.ID, fmt.Sprint("Default chat has set to ", Def.Chat))
 }
 
 // cmd /set_def_mode
@@ -295,6 +311,7 @@ func cmdSchedule(b *B, m *M) {
 		}
 		started = true
 		go start(b)
+		SendT(b, m.Chat.ID, "Jobs started")
 	case "stop":
 		pause = true
 		started = false
@@ -302,6 +319,7 @@ func cmdSchedule(b *B, m *M) {
 	case "status":
 		if started {
 			SendT(b, m.Chat.ID, "jobs running.")
+			return
 		}
 		SendT(b, m.Chat.ID, "There is no jobs running in the background.")
 	default:
