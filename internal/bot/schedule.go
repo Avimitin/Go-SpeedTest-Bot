@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-var pause, started bool
+var pause, started, alert bool
 
 func start(b *B) {
 	if pause {
@@ -19,12 +19,13 @@ func start(b *B) {
 	log.Println("[Schedule]loop stopped")
 }
 
-func fetchResult() string {
+func fetchResult() []speedtest.ResultInfo {
 	result, err := speedtest.GetResult(speedtest.GetHost())
 	if err != nil {
-		return err.Error()
+		log.Println(err.Error())
+		return nil
 	}
-	return formatResult(result)
+	return result.Result
 }
 
 func request(b *B) {
@@ -49,7 +50,7 @@ func request(b *B) {
 		select {
 		case s := <-stChan:
 			if s == "done" {
-				SendT(b, Def.Chat, fetchResult())
+				AlertHandler(fetchResult(), b)
 				wait(Def.Interval)
 			} else {
 				pause = true
