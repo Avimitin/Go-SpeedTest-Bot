@@ -3,8 +3,10 @@ package bot
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"go-speedtest-bot/internal/speedtest"
 	"log"
 	"testing"
+	"time"
 )
 
 func TestLoadConf(t *testing.T) {
@@ -137,4 +139,108 @@ func TestCMDSchedule(t *testing.T) {
 func TestSetDefaultExIn(t *testing.T) {
 	cmd := "/set_exin"
 	cmdSetDefaultExcludeOrInclude(NewBot(), NewMsg(cmd, len(cmd)))
+}
+
+func TestSetAlert(t *testing.T) {
+	SetAlert(true)
+	if !alert {
+		t.Fail()
+	}
+}
+
+func TestCheckDiag(t *testing.T) {
+	get := CheckDiag()
+	for i := range get {
+		if get[i] != DiagHistory[i] {
+			t.Fail()
+		}
+	}
+}
+
+func TestAppendDiag(t *testing.T) {
+	AppendDiag("a")
+	if CheckDiag()["a"].Count != 1 {
+		t.Errorf("Got %d want 1", CheckDiag()["a"].Count)
+	}
+	AppendDiag("b")
+	if CheckDiag()["b"].Count != 1 {
+		t.Errorf("Got %d want 1", CheckDiag()["b"].Count)
+	}
+	AppendDiag("a")
+	if CheckDiag()["a"].Count == 2 {
+		t.Errorf("Got %d want 1", CheckDiag()["a"].Count)
+	}
+	DelRecord("a")
+	AppendDiag("a")
+	e := CheckDiag()["a"].Exist
+	d := CheckRecord("a").Date
+	c := CheckDiag()["a"].Count
+	if !e && c != 2 && d != time.Now() {
+		t.Errorf("Want a exist and count 2 got a %v and count %d and time not right", e, c)
+	}
+}
+
+func TestDelRecord(t *testing.T) {
+	for i := 3; i > 0; i-- {
+		AppendDiag("a")
+	}
+	DelRecord("a")
+	if CheckDiag()["a"].Exist {
+		t.Errorf("Got exist want not exist.")
+	}
+	AppendDiag("a")
+	if count := CheckDiag()["a"].Count; count != 2 {
+		t.Errorf("Got %d want 2", count)
+	}
+}
+
+func TestAlertHandler(t *testing.T) {
+	testResults := []speedtest.ResultInfo{
+		{
+			Remarks: "HK-JP01",
+			Ping:    0.00,
+			GPing:   0.00,
+		},
+		{
+			Remarks: "SZ-HK01",
+			Ping:    0.10,
+			GPing:   0.45,
+		},
+	}
+	b := NewBot()
+	Def.Chat = 649191333
+	AlertHandler(testResults, b)
+	if !HasRecode("HK-JP01") {
+		t.Errorf("Want nodes exist but got null")
+	}
+	if HasRecode("SZ-HK01") {
+		t.Errorf("Unwanted node exist in history.")
+	}
+	testResults = append(testResults, speedtest.ResultInfo{
+		Remarks: "HK-JP01",
+		Ping:    0.12,
+		GPing:   0.45,
+	})
+	CheckRecord("HK-JP01").Date = time.Date(2020, 11, 12, 23, 30, 0, 0, time.Local)
+	AlertHandler(testResults, b)
+	if HasRecode("HK-JP01") {
+		t.Errorf("Want node not exist but still got it.")
+	}
+}
+
+func TestCheckRecord(t *testing.T) {
+	AppendDiag("a")
+	if !CheckRecord("a").Exist {
+		t.Errorf("Want a exist but not exist.")
+	}
+}
+
+func TestHasRecode(t *testing.T) {
+	AppendDiag("a")
+	if !HasRecode("a") {
+		t.Errorf("Want a exist but got none.")
+	}
+	if HasRecode("b") {
+		t.Errorf("Unwanted record in history.")
+	}
 }
