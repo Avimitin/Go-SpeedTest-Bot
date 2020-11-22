@@ -10,6 +10,10 @@ This project is used to testing server connection with telegram bot support.
 - [x] Bot support
 - [x] Schedule jobs
 - [x] Alert
+- [ ] User-defined test result format
+- [ ] Integrate the default config setting
+- [ ] Bot security
+- [ ] Persistence of nodes information
 
 ## Deploy
 
@@ -29,15 +33,10 @@ go build -o bin/
 
 - Backend
 
-> For more about how I define my security please read [backend_security.md](https://github.com/Avimitin/Go-SpeedTest-Bot/blob/master/docs/backend_security.md)
+> You can also apply the `patch.diff` to protect your backend. For more details about what this patch is please read [backend_security.md](https://github.com/Avimitin/Go-SpeedTest-Bot/blob/master/docs/backend_security.md)
 
 ```shell script
 git clone https://github.com/NyanChanMeow/SSRSpeed.git
-# For security you can apply my patch
-cp /PATH/TO/SPT_BOT/patch.diff /PATH/TO/SSRSpeed
-cd /PATH/TO/SSRSpeed
-git apply --check patch.diff
-git apply patch.diff
 python3 web.py
 ```
 
