@@ -2,7 +2,6 @@ package speedtest
 
 import (
 	"encoding/json"
-	"fmt"
 	"go-speedtest-bot/internal/web"
 	"log"
 	"strings"
@@ -73,7 +72,7 @@ func StartTest(h *Host, startCFG *StartConfigs, status chan string) {
 		log.Println("[JSONError]Unable to marshall data", err)
 		return
 	}
-	fmt.Println(string(d))
+	log.Println("New start config: " + string(d))
 	resp, err := web.JSONPostWithTimeout(h.GetURL()+"/start", d, 0)
 	if err != nil {
 		log.Println("[WebGetError]Unable to connect to backend")
