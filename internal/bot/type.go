@@ -27,6 +27,7 @@ var Commands = CMD{
 	"schedule":     cmdSchedule,
 	"set_interval": cmdSetInterval,
 	"set_exin":     cmdSetDefaultExcludeOrInclude,
+	"set_chat":     cmdSetDefaultChat,
 }
 
 var CfgFlags = map[string]string{
