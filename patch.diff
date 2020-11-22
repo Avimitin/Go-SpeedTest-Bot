@@ -1,0 +1,189 @@
+diff --git a/web.py b/web.py
+index 75ce4d8..b20db69 100644
+--- a/web.py
++++ b/web.py
+@@ -86,6 +86,12 @@ def index():
+ 
+ @app.route("/getversion",methods=["GET"])
+ def getVersion():
++	if not isAllow(ip=request.remote_addr):
++		return json.dumps(
++			{
++				"error": "unauthorized"
++			}
++		)
+ 	return json.dumps(
+ 		{
+ 			"main":config["VERSION"],
+@@ -95,18 +101,42 @@ def getVersion():
+ 
+ @app.route("/status",methods=["GET"])
+ def status():
+-	return sc.web_get_status()
++	if not isAllow(ip=request.remote_addr):
++		return json.dumps(
++			{
++				"error": "unauthorized"
++			}
++		)
++	return json.dumps(
++		{
++			"status": sc.web_get_status()
++		}
++	)
+ 
+ @app.route("/readsubscriptions",methods=["POST"])
+ def readSubscriptions():
+ 	if (request.method == "POST"):
++		if not isAllow(token=request.form.get("token"), ip=request.remote_addr):
++			return json.dumps(
++				{
++					"error": "unauthorized"
++				}
++			)
+ 		data = getPostData()
+ 		if (sc.web_get_status() == "running"):
+-			return 'running'
++			return json.dumps(
++				{
++					"status": "running"
++				}
++			)
+ 		subscriptionUrl = data.get("url","")
+ 		#proxyType = data.get("proxyType","SSR")
+ 		if (not subscriptionUrl):
+-			return "invalid url."
++			return json.dumps(
++				{
++					"error": "invalid url"
++				}
++			)
+ 		return json.dumps(sc.web_read_subscription(subscriptionUrl))
+ 
+ def check_file_allowed(filename):
+@@ -114,9 +144,19 @@ def check_file_allowed(filename):
+ 
+ @app.route("/readfileconfig", methods=["POST"])
+ def readFileConfig():
++	if not isAllow(token=request.form.get("token"), ip=request.remote_addr):
++		return json.dumps(
++			{
++				"error": "unauthorized"
++			}
++		)
+ 	if request.method == "POST":
+ 		if (sc.web_get_status() == "running"):
+-			return 'running'
++			return json.dumps(
++				{
++					"status": "running"
++				}
++			)
+ 		ufile = request.files["file"]
+ 		#data = getPostData()
+ 		if ufile:
+@@ -135,6 +175,12 @@ def readFileConfig():
+ 
+ @app.route("/getcolors",methods=["GET"])
+ def getColors():
++	if not isAllow(ip=request.remote_addr):
++		return json.dumps(
++			{
++				"error": "unauthorized"
++			}
++		)
+ 	return json.dumps(sc.web_get_colors())
+ 
+ @app.route('/start',methods=["POST"])
+@@ -142,11 +188,25 @@ def startTest():
+ 	if (request.method == "POST"):
+ 		data = getPostData()
+ 	#	return "SUCCESS"
++		if not isAllow(token=data.get("token"), ip=request.remote_addr):
++			return json.dumps(
++				{
++					"error": "unauthorized"
++				}
++			)
+ 		if (sc.web_get_status() == "running"):
+-			return 'running'
++			return json.dumps(
++				{
++					"status": "running"
++				}
++			)
+ 		configs = data.get("configs",[])
+ 		if (not configs):
+-			return "No configs"
++			return json.dumps(
++				{
++					"error": "no configs"
++				}
++			)
+ 		#proxyType =data.get("proxyType","SSR")
+ 		testMethod =data.get("testMethod", "ST_ASYNC")
+ 		colors =data.get("colors", "origin")
+@@ -165,13 +225,52 @@ def startTest():
+ 		if group:
+ 			sc.set_group(group)
+ 		sc.start_test(use_ssr_cs)
+-		return 'done'
+-	return 'invalid method'
++		return json.dumps(
++			{
++				"status": "done"
++			}
++		)
++	return json.dumps(
++		{
++			"error": "invalid url"
++		}
++	)
+ 
+ @app.route('/getresults')
+ def getResults():
++	if not isAllow(ip=request.remote_addr):
++		return json.dumps(
++			{
++				"error": "unauthorized"
++			}
++		)
+ 	return json.dumps(sc.web_get_results())
+ 
++
++Secret = ""
++white_list = []
++
++
++def LoadSecret():
++	if not os.path.exists("./secret.json"):
++		print("running on unprotected mode")
++		return
++	global Secret, white_list
++	with open("./secret.json", "r", encoding="utf-8") as file:
++		tokenJson = json.load(file)
++		Secret = tokenJson.get("token")
++		white_list = tokenJson.get("whitelist")
++
++
++def isAllow(token=None, ip=None):
++	if token and Secret and token == Secret:
++		return True
++	# if user don't set up any protect way just pass true
++	if not white_list or (ip and ip in white_list):
++		return True
++	return False
++
++
+ if (__name__ == "__main__"):
+ 	pfInfo = check_platform()
+ 	if (pfInfo == "Unknown"):
+@@ -208,6 +307,8 @@ if (__name__ == "__main__"):
+ 			item.addHandler(fileHandler)
+ 			item.addHandler(consoleHandler)
+ 
++	LoadSecret()
++
+ 	logger.info("SSRSpeed {}, Web Api Version {}".format(config["VERSION"], config["WEB_API_VERSION"]))
+ 
+ 	if (logger.level == logging.DEBUG):
