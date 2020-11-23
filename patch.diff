@@ -1,5 +1,5 @@
 diff --git a/web.py b/web.py
-index 75ce4d8..b20db69 100644
+index 75ce4d8..3361f13 100644
 --- a/web.py
 +++ b/web.py
 @@ -86,6 +86,12 @@ def index():
@@ -123,7 +123,7 @@ index 75ce4d8..b20db69 100644
  		#proxyType =data.get("proxyType","SSR")
  		testMethod =data.get("testMethod", "ST_ASYNC")
  		colors =data.get("colors", "origin")
-@@ -165,13 +225,52 @@ def startTest():
+@@ -165,64 +225,106 @@ def startTest():
  		if group:
  			sc.set_group(group)
  		sc.start_test(use_ssr_cs)
@@ -175,15 +175,111 @@ index 75ce4d8..b20db69 100644
 +	return False
 +
 +
- if (__name__ == "__main__"):
- 	pfInfo = check_platform()
- 	if (pfInfo == "Unknown"):
-@@ -208,6 +307,8 @@ if (__name__ == "__main__"):
- 			item.addHandler(fileHandler)
- 			item.addHandler(consoleHandler)
- 
-+	LoadSecret()
++pfInfo = check_platform()
++if (pfInfo == "Unknown"):
++	logger.critical("Your system does not supported.Please contact developer.")
++	sys.exit(1)
 +
- 	logger.info("SSRSpeed {}, Web Api Version {}".format(config["VERSION"], config["WEB_API_VERSION"]))
++DEBUG = False
++
++options, args = console_cfg.init(WEB_API_VERSION)
++
++if (options.paolu):
++	for root, dirs, files in os.walk(".", topdown=False):
++		for name in files:
++			try:
++				os.remove(os.path.join(root, name))
++			except:
++				pass
++		for name in dirs:
++			try:
++				os.remove(os.path.join(root, name))
++			except:
++				pass
++	sys.exit(0)
++
++if (options.debug):
++	DEBUG = options.debug
++	for item in loggerList:
++		item.setLevel(logging.DEBUG)
++		item.addHandler(fileHandler)
++		item.addHandler(consoleHandler)
++else:
++	for item in loggerList:
++		item.setLevel(logging.INFO)
++		item.addHandler(fileHandler)
++		item.addHandler(consoleHandler)
++
++LoadSecret()
++
++logger.info("SSRSpeed {}, Web Api Version {}".format(config["VERSION"], config["WEB_API_VERSION"]))
++
++if (logger.level == logging.DEBUG):
++	logger.debug("Program running in debug mode")
++
++if not options.skip_requirements_check:
++	rc = RequirementsCheck()
++	rc.check()
++else:
++	logger.warn("Requirements check skipped.")
++
++sc = SSRSpeedCore()
++sc.webMode = True
++if not os.path.exists(UPLOAD_FOLDER):
++	logger.warn("Upload folder {} not found, creating.".format(UPLOAD_FOLDER))
++	os.makedirs(UPLOAD_FOLDER)
++
+ if (__name__ == "__main__"):
+-	pfInfo = check_platform()
+-	if (pfInfo == "Unknown"):
+-		logger.critical("Your system does not supported.Please contact developer.")
+-		sys.exit(1)
+-
+-	DEBUG = False
+-	
+-	options,args = console_cfg.init(WEB_API_VERSION)
+-
+-	if (options.paolu):
+-		for root, dirs, files in os.walk(".", topdown=False):
+-			for name in files:
+-				try:
+-					os.remove(os.path.join(root, name))
+-				except:
+-					pass
+-			for name in dirs:
+-				try:
+-					os.remove(os.path.join(root, name))
+-				except:
+-					pass
+-		sys.exit(0)
+-	
+-	if (options.debug):
+-		DEBUG = options.debug
+-		for item in loggerList:
+-			item.setLevel(logging.DEBUG)
+-			item.addHandler(fileHandler)
+-			item.addHandler(consoleHandler)
+-	else:
+-		for item in loggerList:
+-			item.setLevel(logging.INFO)
+-			item.addHandler(fileHandler)
+-			item.addHandler(consoleHandler)
+-
+-	logger.info("SSRSpeed {}, Web Api Version {}".format(config["VERSION"], config["WEB_API_VERSION"]))
+-
+-	if (logger.level == logging.DEBUG):
+-		logger.debug("Program running in debug mode")
+-
+-	if not options.skip_requirements_check:
+-		rc = RequirementsCheck()
+-		rc.check()
+-	else:
+-		logger.warn("Requirements check skipped.")
+-
+-	sc = SSRSpeedCore()
+-	sc.webMode = True
+-	if not os.path.exists(UPLOAD_FOLDER):
+-		logger.warn("Upload folder {} not found, creating.".format(UPLOAD_FOLDER))
+-		os.makedirs(UPLOAD_FOLDER)
+ 	app.run(host=options.listen,port=int(options.port),debug=DEBUG,threaded=True)
  
- 	if (logger.level == logging.DEBUG):
