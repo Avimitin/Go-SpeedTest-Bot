@@ -2,9 +2,25 @@ package database
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 )
+
+func TestSetup(t *testing.T) {
+	err := Setup(os.Getenv("SPT_BOT_PATH") + "/bot.db")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	_, err = ioutil.ReadFile(os.Getenv("SPT_BOT_PATH") + "/bot.db")
+	if err != nil {
+		t.Errorf("Expect bot.db exist but get nothing")
+		return
+	}
+	TestConnect(t)
+}
 
 func TestConnect(t *testing.T) {
 	path, ok := DBFileExist()
