@@ -13,18 +13,46 @@ type Admin struct {
 	Name string
 }
 
+// Setup will generate a new database; require db file absolute path.
+func Setup(dbPath string) error {
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		log.Println("[DatabaseError]Error occur when open a database.", err)
+		return err
+	}
+	defer db.Close()
+	table := `
+CREATE TABLE IF NOT EXISTS manager (UID BIGINT NOT NULL PRIMARY KEY, name VARCHAR(255) NOT NULL);
+`
+	_, err = db.Exec(table)
+	if err != nil {
+		log.Println("[DatabaseError]Error occur when creating database,", err)
+		return err
+	}
+	return nil
+}
+
 func DBFileExist() (string, bool) {
 	_, err := ioutil.ReadFile("./bot.db")
+	// If bot not running in project root path, try to get project environment path.
 	if err != nil {
+		// If found environment value
 		if env := os.Getenv("SPT_BOT_PATH"); env != "" {
+			// Try to get bot.db in project path, else create it.
 			_, err = ioutil.ReadFile(env + "/bot.db")
 			if err != nil {
-				// If bot.db can't be found in running path or environment path return false.
-				log.Println("[DatabaseError]Can't find bot.db")
-				return "", false
+				log.Println("[Database]Can't find bot.db, creating now.")
+				err = Setup(env + "/bot.db")
+				if err != nil {
+					log.Println("[DatabaseError]Error occur when setup database.")
+					os.Exit(-1)
+				}
+				return env + "/bot.db", true
 			}
 			return env + "bot.db", true
 		}
+		log.Println("[DatabaseError]Can't found environment path.")
+		os.Exit(-1)
 	}
 	return "./bot.db", true
 }
