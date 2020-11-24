@@ -7,6 +7,7 @@ import (
 
 var admins []database.Admin
 
+// Auth will check if the given id is an admin or not
 func Auth(id int64) bool {
 	if len(admins) == 0 {
 		return false
@@ -19,6 +20,7 @@ func Auth(id int64) bool {
 	return false
 }
 
+// LoadAdmin load a list of admin
 func LoadAdmin() error {
 	db := database.NewDB()
 	if db == nil {
