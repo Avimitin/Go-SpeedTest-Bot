@@ -1,7 +1,6 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 	"reflect"
 	"testing"
@@ -29,18 +28,6 @@ func TestConnect(t *testing.T) {
 	}
 }
 
-func NewDB() *sql.DB {
-	path, ok := DBFileExist()
-	if !ok {
-		return nil
-	}
-	db, err := Connect(path)
-	if err == nil {
-		return db
-	}
-	return nil
-}
-
 func TestGetAdmin(t *testing.T) {
 	admin, err := GetAdmin(NewDB())
 	if err != nil {
@@ -63,4 +50,32 @@ func TestDBFileExist(t *testing.T) {
 		t.Errorf("Want bot.db got %s", path)
 	}
 	fmt.Println(path)
+}
+
+func TestAddAdmin(t *testing.T) {
+	NewUser := Admin{
+		UID:  112233,
+		Name: "test user",
+	}
+	db := NewDB()
+	if db == nil {
+		t.Error("Database is nil")
+		return
+	}
+	err := AddAdmin(db, NewUser)
+	if err != nil {
+		t.Errorf("%v", err)
+		return
+	}
+	admins, err := GetAdmin(db)
+	if err != nil {
+		t.Errorf("%v", err)
+		return
+	}
+	for _, admin := range admins {
+		if admin.UID == NewUser.UID {
+			return
+		}
+	}
+	t.Errorf("Can't find the user just add")
 }

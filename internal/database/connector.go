@@ -68,6 +68,7 @@ func GetAdmin(db *sql.DB) ([]Admin, error) {
 		log.Println("[DatabaseError]Unable to get manager info,", err)
 		return nil, err
 	}
+	defer row.Close()
 	var name string
 	var uid int64
 	var admins []Admin
@@ -85,4 +86,49 @@ func GetAdmin(db *sql.DB) ([]Admin, error) {
 		return nil, err
 	}
 	return admins, nil
+}
+
+func AddAdmin(db *sql.DB, user Admin) error {
+	tx, err := db.Begin()
+	if err != nil {
+		log.Println("[DatabaseError]Fail to start a transaction, ", err)
+		return err
+	}
+	stmt, err := tx.Prepare("INSERT INTO manager(UID, name) VALUES (?, ?)")
+	if err != nil {
+		log.Println("[DatabaseError]Fail to prepare a insertion.", err)
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(user.UID, user.Name)
+	if err != nil {
+		log.Println("[DatabaseError]Fail to execute value into manage table.", err)
+		return err
+	}
+	err = tx.Commit()
+	if err != nil {
+		log.Println("[DatabaseError]Fail to commit a transaction.", err)
+		return err
+	}
+	return nil
+}
+
+type DatabaseNotFound struct {
+	Text string
+}
+
+func (d *DatabaseNotFound) Error() string {
+	return d.Text
+}
+
+func NewDB() *sql.DB {
+	path, ok := DBFileExist()
+	if !ok {
+		return nil
+	}
+	db, err := Connect(path)
+	if err == nil {
+		return db
+	}
+	return nil
 }
