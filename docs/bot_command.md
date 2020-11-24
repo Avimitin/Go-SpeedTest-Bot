@@ -18,6 +18,8 @@
 |   `/schedule`   |                    Manage timed tasks                    |
 | `/set_interval` |         Set interval between each schedule test          |
 |   `/set_exin`   |         Set default exclude and include remarks          |
+|   `/show_def`   |         Show all the default settings                    |
+|   `/add_admin`  |         Grant bot permission to someone                  |
 
 ## More details
 
@@ -58,3 +60,6 @@ Before starting schedule jobs, you should set default remarks with command `/set
 
 Command `/set_chat` now only support group or user's id.
 
+### CMD `/add_admin`
+
+Command `/add_admin` can only add user when you reply to someone. Will only add user who have username. 
