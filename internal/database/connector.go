@@ -13,6 +13,8 @@ type Admin struct {
 	Name string
 }
 
+var DBPtr *sql.DB
+
 // Setup will generate a new database; require db file absolute path.
 func Setup(dbPath string) error {
 	db, err := sql.Open("sqlite3", dbPath)
@@ -78,6 +80,7 @@ func GetTable(db *sql.DB) (string, error) {
 		log.Println("[DatabaseError]Unable to get table name,", err.Error())
 		return "", err
 	}
+	defer row.Close()
 	var table string
 	for row.Next() {
 		err = row.Scan(&table)
@@ -150,13 +153,16 @@ func (d *DatabaseNotFound) Error() string {
 }
 
 func NewDB() *sql.DB {
+	if DBPtr != nil {
+		return DBPtr
+	}
 	path, ok := DBFileExist()
 	if !ok {
 		return nil
 	}
-	db, err := Connect(path)
+	DBPtr, err := Connect(path)
 	if err == nil {
-		return db
+		return DBPtr
 	}
 	return nil
 }
