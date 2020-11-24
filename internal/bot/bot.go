@@ -5,6 +5,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go-speedtest-bot/internal/ArgsParser"
 	"go-speedtest-bot/internal/config"
+	"go-speedtest-bot/internal/database"
 	"go-speedtest-bot/internal/speedtest"
 	"log"
 	"os"
@@ -57,6 +58,11 @@ func Launch(debug bool, logInfo bool, clean bool) {
 	bot.Debug = debug
 	log.Println("Authorized on account", bot.Self.UserName)
 
+	err := LoadAdmin()
+	if err != nil {
+		log.Println("Fail to load admin list.", err)
+		os.Exit(-1)
+	}
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	updates, err := bot.GetUpdatesChan(u)
@@ -78,7 +84,9 @@ func Launch(debug bool, logInfo bool, clean bool) {
 		if logInfo {
 			log.Printf("[%s]%s", update.Message.From.UserName, update.Message.Text)
 		}
-		CMDHandler(bot, update.Message)
+		if Auth(int64(update.Message.From.ID)) {
+			CMDHandler(bot, update.Message)
+		}
 	}
 }
 
@@ -305,19 +313,18 @@ func cmdSchedule(b *B, m *M) {
 			return
 		}
 
-		if started {
+		if !pause {
 			SendT(b, m.Chat.ID, "Schedule jobs has started")
 			return
 		}
-		started = true
+		pause = false
 		go start(b)
 		SendT(b, m.Chat.ID, "Jobs started")
 	case "stop":
 		pause = true
-		started = false
 		SendT(b, m.Chat.ID, "Schedule jobs will stop in next loop.")
 	case "status":
-		if started {
+		if !pause {
 			SendT(b, m.Chat.ID, "jobs running.")
 			return
 		}
@@ -369,4 +376,34 @@ func cmdSetDefaultExcludeOrInclude(b *B, m *M) {
 	SendP(b, m.Chat.ID, "Usage: /set_exin [exclude/include] keyword1 keyword2\n\n"+
 		"Use case: <code>/set_exin exclude 官网 剩余流量 台 香港</code>\n"+
 		"(Fuzz match is supported)", "html")
+}
+
+// cmd /show_def
+func cmdShowDefault(b *B, m *M) {
+	SendT(b, m.Chat.ID, fmt.Sprintf("%+v", Def))
+}
+
+// cmd /add_admin
+func cmdAddAdmin(b *B, m *M) {
+	if m.ReplyToMessage == nil {
+		SendT(b, m.Chat.ID, "Please reply to a user.")
+		return
+	}
+	NewName := m.ReplyToMessage.From.UserName
+	if NewName == "" {
+		SendT(b, m.Chat.ID, "Please set up username")
+		return
+	}
+	NewID := m.ReplyToMessage.From.ID
+	NewUser := database.Admin{
+		UID:  int64(NewID),
+		Name: NewName,
+	}
+	admins = append(admins, NewUser)
+	err := database.AddAdmin(database.NewDB(), NewUser)
+	if err != nil {
+		SendT(b, m.Chat.ID, "Error occur when create new admin. "+err.Error())
+		return
+	}
+	SendP(b, m.Chat.ID, fmt.Sprintf("New admin <a href=\"tg://user?id=%d\">%s</a> has set up", NewUser.UID, NewUser.Name), "HTML")
 }
