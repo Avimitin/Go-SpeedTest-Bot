@@ -12,7 +12,7 @@ This project is used to testing server connection with telegram bot support.
 - [x] Alert
 - [ ] User-defined test result format
 - [ ] Integrate the default config setting
-- [ ] Bot security
+- [x] Bot security
 - [ ] Persistence of nodes information
 
 ## Deploy
@@ -33,11 +33,14 @@ go build -o bin/
 
 - Backend
 
-> You can also apply the `patch.diff` to protect your backend. For more details about what this patch is please read [backend_security.md](https://github.com/Avimitin/Go-SpeedTest-Bot/blob/master/docs/backend_security.md)
+> It's highly recommend you apply the `patch.diff` to protect your backend and get full `RESTful API` support. For more details about what this patch is please read [backend_security.md](https://github.com/Avimitin/Go-SpeedTest-Bot/blob/master/docs/backend_security.md)
 
 ```shell script
 git clone https://github.com/NyanChanMeow/SSRSpeed.git
 python3 web.py
+# Or use wsgi server
+pip3 install gunicon
+gunicon -w 2 -b 0.0.0.0:10870 -t 0 web:app --log-level critical
 ```
 
 ## Usage
