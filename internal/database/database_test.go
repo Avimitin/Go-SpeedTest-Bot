@@ -20,6 +20,24 @@ func TestSetup(t *testing.T) {
 		return
 	}
 	TestConnect(t)
+	db := NewDB()
+	if db != nil {
+		row, err := db.Query("SELECT UID FROM manager WHERE name = 'SaitoAsuka_kksk'")
+		if err != nil {
+			t.Error(err)
+			return
+		}
+		var uid int64
+		for row.Next() {
+			err = row.Scan(&uid)
+		}
+		if uid != 649191333 {
+			t.Errorf("Want 649191333 got %d", uid)
+			return
+		}
+		return
+	}
+	t.Error("DB NIL")
 }
 
 func TestConnect(t *testing.T) {
