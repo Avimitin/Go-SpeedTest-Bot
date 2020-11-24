@@ -7,16 +7,16 @@ import (
 	"time"
 )
 
-var pause, started, alert bool
+var pause, alert bool
 
 func start(b *B) {
 	if pause {
 		pause = false
 	}
 	log.Println("[Schedule]New loop started")
-	started = true
 	request(b)
 	log.Println("[Schedule]loop stopped")
+	SendT(b, Def.Chat, "Schedule jobs stop")
 }
 
 func fetchResult() []speedtest.ResultInfo {

@@ -81,7 +81,7 @@ func StartTest(h *Host, startCFG *StartConfigs, status chan string) {
 	var state Status
 	err = json.Unmarshal(resp, &state)
 	if err != nil {
-		status <- err.Error()
+		status <- err.Error() + "\nOrigin text:" + string(resp)
 		return
 	}
 	if state.State != "" {
