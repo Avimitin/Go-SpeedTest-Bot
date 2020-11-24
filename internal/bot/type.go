@@ -28,6 +28,8 @@ var Commands = CMD{
 	"set_interval": cmdSetInterval,
 	"set_exin":     cmdSetDefaultExcludeOrInclude,
 	"set_chat":     cmdSetDefaultChat,
+	"show_def":     cmdShowDefault,
+	"add_admin":    cmdAddAdmin,
 }
 
 var CfgFlags = map[string]string{
