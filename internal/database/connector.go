@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
+	"go-speedtest-bot/internal/config"
 	"io/ioutil"
 	"log"
 	"os"
@@ -15,6 +16,18 @@ type Admin struct {
 
 // Setup will generate a new database; require db file absolute path.
 func Setup(dbPath string) error {
+	adminInfo := config.GetBotFile().Section("admin")
+	if adminInfo == nil {
+		log.Println("[ConfigError]You don't set up your admin information yet.")
+		os.Exit(-1)
+	}
+	adminID, err := adminInfo.Key("id").Int64()
+	if err != nil {
+		log.Println("[DatabaseError]Unrecognizable user id.", err)
+		os.Exit(-1)
+	}
+	adminName := adminInfo.Key("name").String()
+
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		log.Println("[DatabaseError]Error occur when open a database.", err)
@@ -28,6 +41,13 @@ CREATE TABLE IF NOT EXISTS manager (UID BIGINT NOT NULL PRIMARY KEY, name VARCHA
 	if err != nil {
 		log.Println("[DatabaseError]Error occur when creating database,", err)
 		return err
+	}
+
+	NewAdmin := Admin{UID: adminID, Name: adminName}
+	err = AddAdmin(db, NewAdmin)
+	if err != nil {
+		log.Println("[DatabaseError]Set up your profile failed. Please add your profile into sql manually.\n", err)
+		os.Exit(-1)
 	}
 	return nil
 }
@@ -49,7 +69,7 @@ func DBFileExist() (string, bool) {
 				}
 				return env + "/bot.db", true
 			}
-			return env + "bot.db", true
+			return env + "/bot.db", true
 		}
 		log.Println("[DatabaseError]Can't found environment path.")
 		os.Exit(-1)
@@ -103,7 +123,7 @@ func GetAdmin(db *sql.DB) ([]Admin, error) {
 	for row.Next() {
 		err := row.Scan(&uid, &name)
 		if err != nil {
-			log.Println("[DatabaseError]Unable to scan value, ", err)
+			log.Println("[DatabaseErrohttps://github.com/Avimitin/Go-SpeedTest-Bot/releases/download/1.1/Go-SpeedTest-Bot-v1.1-linux-amd64r]Unable to scan value, ", err)
 			continue
 		}
 		admins = append(admins, Admin{Name: name, UID: uid})
