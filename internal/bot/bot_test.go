@@ -3,8 +3,10 @@ package bot
 import (
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	"go-speedtest-bot/internal/database"
 	"go-speedtest-bot/internal/speedtest"
 	"log"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -243,4 +245,37 @@ func TestHasRecode(t *testing.T) {
 	if HasRecode("b") {
 		t.Errorf("Unwanted record in history.")
 	}
+}
+
+func TestLoadAdmin(t *testing.T) {
+	err := LoadAdmin()
+	if err != nil {
+		t.Errorf("Error occur when load admins. %v", err)
+		return
+	}
+	if length := len(admins); length == 0 {
+		t.Errorf("Want full list but got %d", length)
+		return
+	}
+	Actual := []database.Admin{
+		{649191333, "SaitoAsuka_kksk"},
+		{112233, "test user"},
+	}
+	if !reflect.DeepEqual(Actual, admins) {
+		t.Errorf("Want %+v\n\nGot %+v", Actual, admins)
+	}
+}
+
+func TestAuth(t *testing.T) {
+	var id1 int64 = 112233
+	var id2 int64 = 332211
+	if Auth(id1) && !Auth(id2) {
+		t.Errorf("Expect id1 pass and id2 not pass")
+	}
+}
+
+func TestCMDShowDefault(t *testing.T) {
+	Def.Chat = 649191333
+	Def.Exclude = []string{"HK", "JP"}
+	cmdShowDefault(NewBot(), NewMsg("/show_def", 9))
 }
