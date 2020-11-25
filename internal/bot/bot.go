@@ -313,18 +313,17 @@ func cmdSchedule(b *B, m *M) {
 			return
 		}
 
-		if !pause {
+		if task.started {
 			SendT(b, m.Chat.ID, "Schedule jobs has started")
 			return
 		}
-		pause = false
-		go start(b)
+		start(b)
 		SendT(b, m.Chat.ID, "Jobs started")
 	case "stop":
-		pause = true
-		SendT(b, m.Chat.ID, "Schedule jobs will stop in next loop.")
+		task.Stop()
+		SendT(b, m.Chat.ID, "Schedule jobs has stopped, but you should checkout backend for it's status.")
 	case "status":
-		if !pause {
+		if task.started {
 			SendT(b, m.Chat.ID, "jobs running.")
 			return
 		}

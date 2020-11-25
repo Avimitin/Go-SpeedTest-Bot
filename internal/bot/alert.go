@@ -15,10 +15,6 @@ type History = map[string]*Recode
 
 var DiagHistory = make(History)
 
-func SetAlert(enable bool) {
-	alert = enable
-}
-
 func CheckDiag() History {
 	return DiagHistory
 }

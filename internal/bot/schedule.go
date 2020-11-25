@@ -3,20 +3,26 @@ package bot
 import (
 	"go-speedtest-bot/internal/speedtest"
 	"log"
-	"os"
+	"sync"
 	"time"
 )
 
-var pause, alert bool
+type Job struct {
+	started bool
+	stop    chan bool
+	mtx     sync.Mutex
+}
+
+var task *Job = &Job{
+	started: false,
+}
 
 func start(b *B) {
-	if pause {
-		pause = false
-	}
-	log.Println("[Schedule]New loop started")
-	request(b)
-	log.Println("[Schedule]loop stopped")
-	SendT(b, Def.Chat, "Schedule jobs stop")
+	log.Println("[Schedule]New goroutine started")
+	task.started = true
+	go func() {
+		task.Run(b)
+	}()
 }
 
 func fetchResult() []speedtest.ResultInfo {
@@ -28,10 +34,10 @@ func fetchResult() []speedtest.ResultInfo {
 	return result.Result
 }
 
-func request(b *B) {
+func (j *Job) Run(b *B) {
 	nodes, err := speedtest.ReadSubscriptions(speedtest.GetHost(), Def.Url)
 	if err != nil {
-		pause = true
+		task.started = false
 		log.Println("[ReadSubscriptionsError]", err)
 		SendT(b, Def.Chat, err.Error())
 		return
@@ -45,25 +51,39 @@ func request(b *B) {
 	cfg := speedtest.NewStartConfigs(Def.Method, Def.Mode, nodes)
 	host := speedtest.GetHost()
 	stChan := make(chan string)
+	period := time.Duration(Def.Interval) * time.Second
+	t := time.NewTicker(period)
 	for {
-		go speedtest.StartTest(host, cfg, stChan)
 		select {
+		case <-t.C:
+			log.Println("[Schedule]New test started")
+			go speedtest.StartTest(host, cfg, stChan)
+			t.Stop()
 		case s := <-stChan:
 			if s == "done" {
 				AlertHandler(fetchResult(), b)
-				wait(Def.Interval)
+				t.Reset(period)
 			} else {
-				pause = true
+				j.Stop()
 				log.Println("[SpeedTestError]" + s)
 				SendT(b, Def.Chat, s)
-			}
-			if pause {
 				return
 			}
+		case <-j.stop:
+			log.Println("[Schedule]loop stopped")
+			return
 		}
 	}
 }
 
+func (j *Job) Stop() {
+	j.mtx.Lock()
+	defer j.mtx.Unlock()
+	j.started = false
+	j.stop <- true
+}
+
+/*
 func wait(s int) {
 	if s < 1 {
 		log.Println("[Sleep]Unexpected interval")
@@ -71,6 +91,7 @@ func wait(s int) {
 	}
 	time.Sleep(time.Second * time.Duration(s))
 }
+*/
 
 func SetInterval(i int) {
 	Def.Interval = i
