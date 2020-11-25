@@ -143,13 +143,6 @@ func TestSetDefaultExIn(t *testing.T) {
 	cmdSetDefaultExcludeOrInclude(NewBot(), NewMsg(cmd, len(cmd)))
 }
 
-func TestSetAlert(t *testing.T) {
-	SetAlert(true)
-	if !alert {
-		t.Fail()
-	}
-}
-
 func TestCheckDiag(t *testing.T) {
 	get := CheckDiag()
 	for i := range get {
