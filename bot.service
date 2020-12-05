@@ -1,0 +1,11 @@
+[Unit]
+Description=TGBOT
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/tgbot
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
