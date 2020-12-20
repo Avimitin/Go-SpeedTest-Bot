@@ -306,10 +306,11 @@ func cmdSchedule(b *B, m *M) {
 		return
 	}
 	arg := strings.Fields(m.Text)[1]
+	task := NewJob()
 	switch arg {
 	case "start":
 		if Def.Chat == 0 || Def.Url == "" || Def.Remarks == "" {
-			SendT(b, m.Chat.ID, "You don't set up default config yet. Please use /set_default to set your config.")
+			SendT(b, m.Chat.ID, "You don't set up default config yet. Please use /set_default to set your config. Also you can check out /show_def for your current default setting.")
 			return
 		}
 
@@ -317,10 +318,10 @@ func cmdSchedule(b *B, m *M) {
 			SendT(b, m.Chat.ID, "Schedule jobs has started")
 			return
 		}
-		start(b)
+		task.start(b)
 		SendT(b, m.Chat.ID, "Jobs started")
 	case "stop":
-		task.Stop()
+		task.Stop(0)
 		SendT(b, m.Chat.ID, "Schedule jobs has stopped, but you should checkout backend for it's status.")
 	case "status":
 		if task.started {
