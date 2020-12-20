@@ -130,12 +130,13 @@ func TestSchedule(t *testing.T) {
 	Def.Interval = 10
 	Def.Chat = 649191333
 	Def.Include = []string{"剩余"}
-	start(NewBot())
+	s := NewJob()
+	s.start(NewBot())
 }
 
 func TestCMDSchedule(t *testing.T) {
 	cmd := "/schedule"
-	cmdSchedule(NewBot(), NewMsg(cmd+" status", len(cmd)))
+	cmdSchedule(NewBot(), NewMsg(cmd+" stop", len(cmd)))
 }
 
 func TestSetDefaultExIn(t *testing.T) {
