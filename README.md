@@ -43,7 +43,7 @@ journalctl -au tgbot -f
 
 - Backend
 
-> It's highly recommend you apply the `patch.diff` to protect your backend and get full `RESTful API` support. For more details about what this patch is please read [backend_security.md](https://github.com/Avimitin/Go-SpeedTest-Bot/blob/master/docs/backend_security.md)
+> It's highly recommended you to apply the `patch.diff` to protect your backend and get full `RESTful API` support. For more details about what this patch is please read [backend_security.md](https://github.com/Avimitin/Go-SpeedTest-Bot/blob/master/docs/backend_security.md)
 
 ```shell script
 git clone https://github.com/NyanChanMeow/SSRSpeed.git
@@ -58,7 +58,3 @@ gunicon -w 2 -b 0.0.0.0:10870 -t 0 web:app --log-level critical
 - Define your settings in `config` directory.
 
 - About bot command please read [bot_command.md](https://github.com/Avimitin/Go-SpeedTest-Bot/blob/master/docs/bot_command.md)
-
-## Bugs
-
-- Detects unexpected error that will let loop terminate
