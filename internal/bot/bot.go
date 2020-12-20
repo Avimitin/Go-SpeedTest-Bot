@@ -298,6 +298,10 @@ func cmdRunDefault(b *B, m *M) {
 	startTestWithURL(b, m, Def.Url, Def.Method, Def.Mode, Def.Include, Def.Exclude)
 }
 
+var (
+	task = NewJob()
+)
+
 // cmd /schedule
 func cmdSchedule(b *B, m *M) {
 	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) < 2 {
@@ -306,7 +310,6 @@ func cmdSchedule(b *B, m *M) {
 		return
 	}
 	arg := strings.Fields(m.Text)[1]
-	task := NewJob()
 	switch arg {
 	case "start":
 		if Def.Chat == 0 || Def.Url == "" || Def.Remarks == "" {
