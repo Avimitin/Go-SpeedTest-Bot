@@ -69,18 +69,18 @@ func GetResult(h *Host) (*Result, error) {
 func StartTest(h *Host, startCFG *StartConfigs, status chan string) {
 	d, err := json.Marshal(startCFG)
 	if err != nil {
-		log.Println("[JSONError]Unable to marshall data", err)
+		log.Println("[StartTest]Unable to marshall data", err)
 		return
 	}
-	log.Println("New start config: " + string(d))
 	resp, err := web.JSONPostWithTimeout(h.GetURL()+"/start", d, 0)
 	if err != nil {
-		log.Println("[WebGetError]Unable to connect to backend")
+		log.Println("[StartTest]Unable to connect to backend")
 		return
 	}
 	var state Status
 	err = json.Unmarshal(resp, &state)
 	if err != nil {
+		log.Println("[StartTest]Fail to unmarshall data")
 		status <- err.Error() + "\nOrigin text:" + string(resp)
 		return
 	}

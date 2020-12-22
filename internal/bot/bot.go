@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync/atomic"
 )
 
 func loadConf() *Conf {
@@ -85,7 +86,7 @@ func Launch(debug bool, logInfo bool, clean bool) {
 			log.Printf("[%s]%s", update.Message.From.UserName, update.Message.Text)
 		}
 		if Auth(int64(update.Message.From.ID)) {
-			CMDHandler(bot, update.Message)
+			go CMDHandler(bot, update.Message)
 		}
 	}
 }
@@ -317,8 +318,8 @@ func cmdSchedule(b *B, m *M) {
 			return
 		}
 
-		if task.started {
-			SendT(b, m.Chat.ID, "Schedule jobs has started")
+		if atomic.LoadInt32(&task.status) == RUNNING {
+			SendT(b, m.Chat.ID, "There is a job running in background now.")
 			return
 		}
 		task.start(b)
@@ -327,7 +328,7 @@ func cmdSchedule(b *B, m *M) {
 		task.Stop(0)
 		SendT(b, m.Chat.ID, "Schedule jobs has stopped, but you should checkout backend for it's status.")
 	case "status":
-		if task.started {
+		if atomic.LoadInt32(&task.status) == RUNNING {
 			SendT(b, m.Chat.ID, "jobs running.")
 			return
 		}

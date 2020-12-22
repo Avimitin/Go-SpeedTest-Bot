@@ -3,36 +3,52 @@ package bot
 import (
 	"go-speedtest-bot/internal/speedtest"
 	"log"
-	"sync"
+	"sync/atomic"
 	"time"
 )
 
+const (
+	STOPPED int32 = iota
+	RUNNING
+)
+
 type Job struct {
-	started bool
-	stop    chan int32
-	mtx     sync.Mutex
+	status int32
+	stop   chan int32
 }
 
 func NewJob() *Job {
 	return &Job{
-		started: false,
-		stop:    make(chan int32, 1),
+		status: STOPPED,
+		stop:   make(chan int32, 1),
+	}
+}
+
+func (j *Job) running() {
+	ok := atomic.CompareAndSwapInt32(&j.status, STOPPED, RUNNING)
+	if ok {
+		log.Println("[INFO]Schedule job has started.")
+	}
+}
+
+func (j *Job) stopped() {
+	ok := atomic.CompareAndSwapInt32(&j.status, RUNNING, STOPPED)
+	if ok {
+		log.Println("[INFO]Schedule job has stopped.")
 	}
 }
 
 func (j *Job) start(b *B) {
 	log.Println("[Schedule]New goroutine started")
-	j.started = true
-	go func() {
-		j.Run(b)
-	}()
+	atomic.CompareAndSwapInt32(&j.status, STOPPED, RUNNING)
+	go j.Run(b)
 }
 
 func (j *Job) Run(b *B) {
 	getTestCFG := func() *speedtest.StartConfigs {
 		nodes, err := speedtest.ReadSubscriptions(speedtest.GetHost(), Def.Url)
 		if err != nil {
-			j.started = false
+			j.stopped()
 			log.Println("[ReadSubscriptionsError]", err)
 			SendT(b, Def.Chat, err.Error())
 			return nil
@@ -55,7 +71,7 @@ func (j *Job) Run(b *B) {
 			log.Println("[Schedule]New test started")
 			cfg := getTestCFG()
 			if cfg == nil {
-				j.Stop(-1)
+				j.stopped()
 				log.Println("[Schedule]Schedule jobs exit: get nil config.")
 				return
 			}
@@ -66,9 +82,9 @@ func (j *Job) Run(b *B) {
 				AlertHandler(fetchResult(), b)
 				t.Reset(period)
 			} else {
-				j.Stop(-1)
 				log.Println("[SpeedTestError]" + s)
-				SendT(b, Def.Chat, s)
+				SendT(b, Def.Chat, s+" Please restart schedule jobs.")
+				j.stopped()
 				return
 			}
 		case state := <-j.stop:
@@ -84,9 +100,7 @@ func (j *Job) Run(b *B) {
 }
 
 func (j *Job) Stop(state int32) {
-	j.mtx.Lock()
-	defer j.mtx.Unlock()
-	j.started = false
+	j.stopped()
 	j.stop <- state
 }
 
