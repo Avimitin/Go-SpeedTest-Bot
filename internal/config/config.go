@@ -41,12 +41,17 @@ func GetToken() string {
 	return file.Global.Token
 }
 
-func GetRunner(runnername string) *Runner {
+func GetAllRunner() []*Runner {
 	file, err := GetConfig()
 	if err != nil {
 		fatal(err)
 	}
-	for _, f := range file.Runner {
+	return file.Runner
+}
+
+func GetRunner(runnername string) *Runner {
+	runners := GetAllRunner()
+	for _, f := range runners {
 		if f.Name == runnername {
 			return f
 		}
