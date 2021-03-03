@@ -2,58 +2,28 @@ package config
 
 import (
 	"fmt"
-	"log"
 	"os"
+	"path"
 
 	"gopkg.in/ini.v1"
 )
 
-// GetHostFile return parsing host configuration file
-func GetHostFile() *ini.File {
-	if !CFGExistTest() {
-		log.Printf("[ConfigError]No enough config")
-		os.Exit(1)
+func findConfigFilePath() string {
+	var route string
+	if route = os.Getenv("SPT_CFG_PATH"); route != "" {
+		return path.Join(route, "config.ini")
 	}
-	cfg, err := ini.Load("./config/host.ini")
-	if err != nil {
-		cfg, err = ini.Load(fmt.Sprintf("%s/config/host.ini", os.Getenv("SPT_BOT_PATH")))
-		if err != nil {
-			log.Printf("[ConfigError]Unable to read host.ini: %v", err)
-			os.Exit(1)
-		}
+	if route = os.Getenv("HOME"); route != "" {
+		return path.Join(route, ".config", "spt_bot", "config.ini")
 	}
-	return cfg
+	return path.Join(".", "config", "config.ini")
 }
 
-// GetBotFile return parsing bot configuration file
-func GetBotFile() *ini.File {
-	if !CFGExistTest() {
-		log.Printf("[ConfigError]No enough config")
-		os.Exit(1)
-	}
-	cfg, err := ini.Load("./config/bot.ini")
+func GetConfig() (*ini.File, error) {
+	path := findConfigFilePath()
+	cfg, err := ini.Load(path)
 	if err != nil {
-		cfg, err = ini.Load(fmt.Sprintf("%s/config/bot.ini", os.Getenv("SPT_BOT_PATH")))
-		if err != nil {
-			log.Printf("[ConfigError]Unable to read subs.ini: %v", err)
-			os.Exit(1)
-		}
+		return nil, fmt.Errorf("open %s: %v", path, err)
 	}
-	return cfg
-}
-
-func GetSubsFile() *ini.File {
-	if !CFGExistTest() {
-		log.Printf("[ConfigError]No enough config")
-		os.Exit(1)
-	}
-	cfg, err := ini.Load("./config/subs.ini")
-	if err != nil {
-		cfg, err = ini.Load(fmt.Sprintf("%s/config/subs.ini", os.Getenv("SPT_BOT_PATH")))
-		if err != nil {
-			log.Printf("[ConfigError]Unable to read subs.ini: %v", err)
-			os.Exit(1)
-		}
-	}
-	return cfg
+	return cfg, nil
 }
