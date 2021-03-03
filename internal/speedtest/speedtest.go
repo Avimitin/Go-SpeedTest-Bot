@@ -125,6 +125,7 @@ func IncludeRemarks(configs []*SubscriptionResp, incRems []string) []*Subscripti
 		for _, c := range configs {
 			if strings.Contains(c.Config.Remarks, e) {
 				newcfg = append(newcfg, c)
+				break
 			}
 		}
 	}
