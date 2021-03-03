@@ -133,30 +133,18 @@ func IncludeRemarks(configs []*SubscriptionResp, incRems []string) []*Subscripti
 }
 
 // ExcludeRemarks will select all the configs excluded the given remarks.
-func ExcludeRemarks(configs []*SubscriptionResp, excRem []string) []*SubscriptionResp {
-	incRems := IncludeRemarks(configs, excRem)
-	if incRems == nil {
-		return nil
-	}
-	var set1 = map[string]*SubscriptionResp{}
-	for _, i := range incRems {
-		set1[i.Config.Remarks] = i
-	}
-	var set2 = map[string]*SubscriptionResp{}
+func ExcludeRemarks(configs []*SubscriptionResp, excludeRemarks []string) []*SubscriptionResp {
+	var newcfg []*SubscriptionResp
+	remarksLength := len(excludeRemarks)
 	for _, c := range configs {
-		set2[c.Config.Remarks] = c
-	}
-	if len(set1) > len(set2) {
-		set1, set2 = set2, set1
-	}
-	var excludeCFG []*SubscriptionResp
-	for k := range set1 {
-		if _, ok := set2[k]; ok {
-			delete(set2, k)
+		for i, mark := range excludeRemarks {
+			if mark == c.Config.Remarks {
+				break
+			}
+			if i == remarksLength-1 {
+				newcfg = append(newcfg, c)
+			}
 		}
 	}
-	for _, v := range set2 {
-		excludeCFG = append(excludeCFG, v)
-	}
-	return excludeCFG
+	return newcfg
 }
