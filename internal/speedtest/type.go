@@ -1,15 +1,7 @@
 package speedtest
 
-import "fmt"
-
-type Host struct {
-	IP    string
-	Token string
-	Port  int
-}
-
-func (h *Host) GetURL() string {
-	return fmt.Sprintf("http://%s:%d", h.IP, h.Port)
+type Host interface {
+	GetURL() string
 }
 
 type Version struct {
