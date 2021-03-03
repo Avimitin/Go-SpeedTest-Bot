@@ -123,7 +123,13 @@ func cmdPing(b *B, m *M) {
 
 // cmd /status
 func cmdStatus(b *B, m *M) {
-	result, err := speedtest.GetStatus(speedtest.GetHost())
+	args := strings.Fields(m.Text)
+	if len(args) < 2 {
+		SendT(b, m.Chat.ID, "Usage: /status <runner-name>")
+		return
+	}
+	runner := config.GetRunner(args[1])
+	result, err := speedtest.GetStatus(*runner)
 	if err != nil {
 		SendT(b, m.Chat.ID, fmt.Sprint(err))
 		return
