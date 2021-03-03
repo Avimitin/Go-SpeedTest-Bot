@@ -1,25 +1,20 @@
 package web
 
 import (
+	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 )
 
 // Get method will make a get request with the url given by user.
 func Get(url string) ([]byte, error) {
-	if !isLegalURL(url) {
-		return nil, &illegalUrl{"URL missing prefix."}
-	}
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Printf("[WebGetError]%v", err)
-		return nil, err
+		return nil, fmt.Errorf("get %s: %v", url, err)
 	}
 	content, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("[WebGetError]%v", err)
-		return nil, err
+		return nil, fmt.Errorf("read response from %s: %v", url, err)
 	}
 	return content, nil
 }
