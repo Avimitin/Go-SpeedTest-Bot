@@ -19,14 +19,18 @@ type Host interface {
 type Runner struct {
 	mu     sync.RWMutex
 	Status int32
+	Name   string
 	Host   Host
+	Admin  []int
 }
 
 // NewRunner return a new pointer to Runner
-func NewRunner(h Host) *Runner {
+func NewRunner(name string, host Host, admin []int) *Runner {
 	return &Runner{
 		Status: Pending,
-		Host:   h,
+		Host:   host,
+		Name:   name,
+		Admin:  admin,
 	}
 }
 
