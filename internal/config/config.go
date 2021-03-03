@@ -27,3 +27,33 @@ func GetConfig() (*ini.File, error) {
 	}
 	return cfg, nil
 }
+
+func GetToken() string {
+	file, err := GetConfig()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	return file.Section("Bot").Key("token").String()
+}
+
+type HostConfig struct {
+	address string
+	key     string
+}
+
+func (hc *HostConfig) GetURL() string {
+	return hc.address
+}
+
+func GetHost() *HostConfig {
+	file, err := GetConfig()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	return &HostConfig{
+		address: file.Section("Host").Key("address").String(),
+		key:     file.Section("Host").Key("key").String(),
+	}
+}
