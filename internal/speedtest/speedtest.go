@@ -11,8 +11,8 @@ import (
 )
 
 // Ping will test if the given host is accessible or not
-func Ping(h Host) bool {
-	resp, err := web.Get(path.Join(h.GetURL(), "getversion"))
+func (r *Runner) Ping() bool {
+	resp, err := web.Get(path.Join(r.Host.GetURL(), "getversion"))
 	if err != nil {
 		return false
 	}
@@ -26,8 +26,8 @@ func Ping(h Host) bool {
 }
 
 // GetStatus is used for fetching backend status
-func GetStatus(h Host) (*Status, error) {
-	resp, err := web.Get(path.Join(h.GetURL(), "status"))
+func (r *Runner) GetStatus() (*Status, error) {
+	resp, err := web.Get(path.Join(r.Host.GetURL(), "status"))
 	if err != nil {
 		return nil, fmt.Errorf("get status: %v", err)
 	}
@@ -40,13 +40,13 @@ func GetStatus(h Host) (*Status, error) {
 }
 
 // ReadSubscriptions return list of node information with the given subscription url.
-func ReadSubscriptions(h Host, sub string) ([]*SubscriptionResp, error) {
+func (r *Runner) ReadSubscriptions(sub string) ([]*SubscriptionResp, error) {
 	data := map[string]string{"url": sub}
 	jsondata, err := json.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("%s not valid", sub)
 	}
-	resp, err := web.JSONPost(path.Join(h.GetURL(), "readsubscriptions"), jsondata)
+	resp, err := web.JSONPost(path.Join(r.Host.GetURL(), "readsubscriptions"), jsondata)
 	if err != nil {
 		return nil, fmt.Errorf("post sub: %v", err)
 	}
@@ -59,8 +59,8 @@ func ReadSubscriptions(h Host, sub string) ([]*SubscriptionResp, error) {
 }
 
 // GetResult return the newest speed test result.
-func GetResult(h Host) (*Result, error) {
-	resp, err := web.Get(path.Join(h.GetURL(), "getresults"))
+func (r *Runner) GetResult() (*Result, error) {
+	resp, err := web.Get(path.Join(r.Host.GetURL(), "getresults"))
 	if err != nil {
 		return nil, fmt.Errorf("get result: %v", err)
 	}
@@ -77,7 +77,7 @@ func GetResult(h Host) (*Result, error) {
 // If error happen function will pass error message into status chan.
 // If state is not null it will pass status: ["running" / "done"].
 // If you are calling this method without authorized of given unexpected config it will pass error message.
-func StartTest(h Host, startCFG *StartConfigs, statusChan chan string) {
+func (r *Runner) StartTest(startCFG *StartConfigs, statusChan chan string) {
 	d, err := json.Marshal(startCFG)
 	if err != nil {
 		e := sendStatus(statusChan, "invalid start config")
@@ -87,7 +87,7 @@ func StartTest(h Host, startCFG *StartConfigs, statusChan chan string) {
 		}
 		return
 	}
-	resp, err := web.JSONPostWithTimeout(path.Join(h.GetURL(), "start"), d, 0)
+	resp, err := web.JSONPostWithTimeout(path.Join(r.Host.GetURL(), "start"), d, 0)
 	if err != nil {
 		sendStatus(statusChan, fmt.Sprintf("speed test failed, response: %q", resp))
 		return
