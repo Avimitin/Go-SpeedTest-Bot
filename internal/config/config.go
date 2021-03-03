@@ -41,15 +41,6 @@ func GetToken() string {
 	return file.Global.Token
 }
 
-type HostConfig struct {
-	address string
-	key     string
-}
-
-func (hc *HostConfig) GetURL() string {
-	return hc.address
-}
-
 func GetRunner(runnername string) *Runner {
 	file, err := GetConfig()
 	if err != nil {

@@ -15,12 +15,18 @@ type Global struct {
 }
 
 type Runner struct {
-	Name string `json:"name"`
-	Host struct {
-		Address string `json:"address"`
-		Key     string `json:"key"`
-	} `json:"host"`
-	Admins []int `json:"admins"`
+	Name   string `json:"name"`
+	Host   Host   `json:"host"`
+	Admins []int  `json:"admins"`
+}
+
+type Host struct {
+	Address string `json:"address"`
+	Key     string `json:"key"`
+}
+
+func (h *Host) GetURL() string {
+	return h.Address
 }
 
 type Default struct {
