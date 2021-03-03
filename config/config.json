@@ -1,0 +1,38 @@
+{
+	"global": {
+		"token": 1234567,
+		"admin": 114514
+	},
+	"runner": [
+		{
+			"name": "example-runner-1",
+			"host": {
+				"address": "http://runner-1.example.com:11451",
+				"key": "aes256cfb"
+			},
+			"admins": [114514, 1919810]
+		},
+		{
+			"name": "example-runner-2",
+			"host": {
+				"address": "http://runner-2.example.com:11451",
+				"key": "aes256cfb"
+			},
+			"admins": [114514, 1234567, 7654321]
+		}
+	],
+	"subscriptions": [
+		{
+			"name": "op-sub",
+			"link": "http://oxygenproxy.com/sub/xxx",
+			"chat": 1010101010,
+			"admins": [114514, 1919810]
+		},
+		{
+			"name": "other-sub",
+			"link": "http://example.com/sub/xxx",
+			"chat": 1010101010,
+			"admins": [114514, 1234567]
+		}
+	]
+}
