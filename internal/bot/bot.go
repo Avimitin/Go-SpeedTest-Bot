@@ -5,7 +5,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go-speedtest-bot/internal/ArgsParser"
 	"go-speedtest-bot/internal/config"
-	"go-speedtest-bot/internal/database"
 	"go-speedtest-bot/internal/speedtest"
 	"log"
 	"os"
@@ -14,18 +13,12 @@ import (
 	"sync/atomic"
 )
 
-func loadConf() *Conf {
-	cfg := config.GetBotFile()
-	s := cfg.Section("bot")
-	return &Conf{token: s.Key("token").String()}
-}
-
 // NewBot return a bot instance
 func NewBot() *B {
-	bot, err := tgbotapi.NewBotAPI(loadConf().token)
+	bot, err := tgbotapi.NewBotAPI(config.GetToken())
 	if err != nil {
-		log.Println("[NewBotError]Token", err)
-		os.Exit(-1)
+		log.Printf("initialize bot: %v", err)
+		os.Exit(1)
 	}
 	return bot
 }
@@ -35,7 +28,7 @@ func SendT(bot *B, cid int64, text string) {
 	msg := tgbotapi.NewMessage(cid, text)
 	_, err := bot.Send(msg)
 	if err != nil {
-		log.Println("SendError", err)
+		log.Println("send %q: %v", text[:10]+"...", err)
 	}
 }
 
@@ -45,7 +38,7 @@ func SendP(bot *B, cid int64, text string, format string) {
 	msg.ParseMode = format
 	_, err := bot.Send(msg)
 	if err != nil {
-		log.Println("SendError", err)
+		log.Println("send %q: %v", text[:10]+"...", err)
 	}
 }
 
@@ -59,11 +52,7 @@ func Launch(debug bool, logInfo bool, clean bool) {
 	bot.Debug = debug
 	log.Println("Authorized on account", bot.Self.UserName)
 
-	err := LoadAdmin()
-	if err != nil {
-		log.Println("Fail to load admin list.", err)
-		os.Exit(-1)
-	}
+	admins := NewAdmin()
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	updates, err := bot.GetUpdatesChan(u)
@@ -82,10 +71,7 @@ func Launch(debug bool, logInfo bool, clean bool) {
 		if update.Message == nil {
 			continue
 		}
-		if logInfo {
-			log.Printf("[%s]%s", update.Message.From.UserName, update.Message.Text)
-		}
-		if Auth(int64(update.Message.From.ID)) {
+		if admins.Auth(update.Message.From.ID) {
 			go CMDHandler(bot, update.Message)
 		}
 	}
@@ -139,12 +125,15 @@ func cmdStatus(b *B, m *M) {
 
 // cmd /read_sub
 func cmdReadSub(b *B, m *M) {
-	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) < 2 {
-		SendT(b, m.Chat.ID, "Use case(Only single link is supported):\n/read_sub https://example.com")
+	args := strings.Fields(m.Text)
+	if len(args) < 3 {
+		SendT(b, m.Chat.ID, "Usage:\n/read_sub <sub> <runner>")
 		return
 	}
-	url := strings.Fields(m.Text)[1]
-	subResps, err := speedtest.ReadSubscriptions(speedtest.GetHost(), url)
+	url := args[1]
+	runnername := args[2]
+	runner := config.GetRunner(runnername)
+	subResps, err := speedtest.ReadSubscriptions(*runner, url)
 	if err != nil {
 		SendT(b, m.Chat.ID, fmt.Sprint(err))
 		return
@@ -178,7 +167,13 @@ func formatResult(r *speedtest.Result) string {
 
 // cmd /result
 func cmdResult(b *B, m *M) {
-	result, err := speedtest.GetResult(speedtest.GetHost())
+	args := strings.Fields(m.Text)
+	if len(args) < 2 {
+		SendT(b, m.Chat.ID, "Usage: /status <runner-name>")
+		return
+	}
+	runner := config.GetRunner(args[1])
+	result, err := speedtest.GetResult(*runner)
 	if err != nil {
 		SendT(b, m.Chat.ID, fmt.Sprint(err))
 		return
@@ -191,7 +186,13 @@ func cmdResult(b *B, m *M) {
 }
 
 func startTestWithURL(b *B, m *M, url string, method string, mode string, include []string, exclude []string) {
-	result, err := speedtest.GetStatus(speedtest.GetHost())
+	args := strings.Fields(m.Text)
+	if len(args) < 2 {
+		SendT(b, m.Chat.ID, "Usage: /run_url <runner-name>")
+		return
+	}
+	runner := config.GetRunner(args[1])
+	result, err := speedtest.GetStatus(*runner)
 	if err != nil {
 		SendT(b, m.Chat.ID, err.Error())
 		return
@@ -204,7 +205,7 @@ func startTestWithURL(b *B, m *M, url string, method string, mode string, includ
 		SendT(b, m.Chat.ID, "There is still a test running, please wait for all works done.")
 		return
 	}
-	nodes, err := speedtest.ReadSubscriptions(speedtest.GetHost(), url)
+	nodes, err := speedtest.ReadSubscriptions(*runner, url)
 	if err != nil {
 		SendT(b, m.Chat.ID, err.Error())
 		return
@@ -216,7 +217,7 @@ func startTestWithURL(b *B, m *M, url string, method string, mode string, includ
 		nodes = speedtest.ExcludeRemarks(nodes, exclude)
 	}
 	cfg := speedtest.NewStartConfigs(method, mode, nodes)
-	go speedtest.StartTest(speedtest.GetHost(), cfg, make(chan string, 1))
+	go speedtest.StartTest(*runner, cfg, make(chan string, 1))
 	SendT(b, m.Chat.ID, "Test started, you can use /result to check latest result.")
 }
 
@@ -237,15 +238,15 @@ func cmdStartTestWithURL(b *B, m *M) {
 
 // cmd /list_subs
 func cmdListSubs(b *B, m *M) {
-	subsFile := config.GetSubsFile()
-	keys := subsFile.Section("").KeyStrings()
-	if len(keys) == 0 {
-		SendT(b, m.Chat.ID, "There is no subscriptions url in storage")
-		return
-	}
 	var text string = "<b>Your subscriptions</b>:\n"
-	for _, k := range keys {
-		text += fmt.Sprintf("* <a href=\"%s\">%s</a>\n", subsFile.Section("").Key(k).String(), k)
+	defaultconfigs := config.GetAllDefaultConfig()
+	for _, dc := range defaultconfigs {
+		for _, admin := range dc.Admins {
+			if m.From.ID == admin {
+				text += fmt.Sprintf(`* <a href="%s">%s</a>\n`, dc.Link, dc.Name)
+				break
+			}
+		}
 	}
 	SendP(b, m.Chat.ID, text, "html")
 }
@@ -263,31 +264,22 @@ func cmdSelectDefaultSub(b *B, m *M) {
 		return
 	}
 
-	def := strings.Fields(m.Text)[1]
-	subsFile := config.GetSubsFile()
-	if !subsFile.Section("").HasKey(def) {
+	defname := strings.Fields(m.Text)[1]
+	subsFile := config.GetDefaultConfig(defname)
+	if subsFile == nil {
 		SendT(b, m.Chat.ID, "Remarks not found.")
 		return
 	}
-	Def.Remarks = def
-	sub := subsFile.Section("").Key(Def.Remarks).String()
-	Def.Url = sub
-	SendP(b, m.Chat.ID, fmt.Sprintf("Default has set to <a href=\"%s\">%s</a>", Def.Url, Def.Remarks), "HTML")
-}
-
-// cmd /set_chat
-func cmdSetDefaultChat(b *B, m *M) {
-	if len(strings.Fields(m.Text)) < 2 {
-		SendT(b, m.Chat.ID, "Send me a char room id")
-		return
+	for _, admin := range subsFile.Admins {
+		if admin == m.From.ID {
+			Def.Remarks = subsFile.Name
+			Def.Url = subsFile.Link
+			Def.Chat = subsFile.Chat
+			SendP(b, m.Chat.ID, fmt.Sprintf("Default has set to <a href=\"%s\">%s</a>", Def.Url, Def.Remarks), "HTML")
+			return
+		}
 	}
-	val, err := strconv.ParseInt(strings.Fields(m.Text)[1], 10, 64)
-	if err != nil {
-		SendT(b, m.Chat.ID, err.Error())
-		return
-	}
-	Def.Chat = val
-	SendT(b, m.Chat.ID, fmt.Sprint("Default chat has set to ", Def.Chat))
+	SendT(b, m.Chat.ID, "you can't access the config.")
 }
 
 // cmd /set_def_mode
@@ -394,29 +386,4 @@ func cmdSetDefaultExcludeOrInclude(b *B, m *M) {
 // cmd /show_def
 func cmdShowDefault(b *B, m *M) {
 	SendT(b, m.Chat.ID, fmt.Sprintf("%+v", Def))
-}
-
-// cmd /add_admin
-func cmdAddAdmin(b *B, m *M) {
-	if m.ReplyToMessage == nil {
-		SendT(b, m.Chat.ID, "Please reply to a user.")
-		return
-	}
-	NewName := m.ReplyToMessage.From.UserName
-	if NewName == "" {
-		SendT(b, m.Chat.ID, "Please set up username")
-		return
-	}
-	NewID := m.ReplyToMessage.From.ID
-	NewUser := database.Admin{
-		UID:  int64(NewID),
-		Name: NewName,
-	}
-	admins = append(admins, NewUser)
-	err := database.AddAdmin(database.NewDB(), NewUser)
-	if err != nil {
-		SendT(b, m.Chat.ID, "Error occur when create new admin. "+err.Error())
-		return
-	}
-	SendP(b, m.Chat.ID, fmt.Sprintf("New admin <a href=\"tg://user?id=%d\">%s</a> has set up", NewUser.UID, NewUser.Name), "HTML")
 }
