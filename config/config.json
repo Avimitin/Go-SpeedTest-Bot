@@ -26,13 +26,15 @@
 			"name": "op-sub",
 			"link": "http://oxygenproxy.com/sub/xxx",
 			"chat": 1010101010,
-			"admins": [114514, 1919810]
+			"admins": [114514, 1919810],
+			"default_runner": "example-runner-1"
 		},
 		{
 			"name": "other-sub",
 			"link": "http://example.com/sub/xxx",
 			"chat": 1010101010,
-			"admins": [114514, 1234567]
+			"admins": [114514, 1234567],
+			"default_runner": "example-runner-2"
 		}
 	]
 }
