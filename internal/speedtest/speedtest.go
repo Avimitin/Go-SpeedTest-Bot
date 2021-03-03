@@ -2,8 +2,11 @@ package speedtest
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"go-speedtest-bot/internal/web"
-	"log"
+	"os"
+	"path"
 	"strings"
 )
 
