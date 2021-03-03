@@ -21,7 +21,7 @@
 			"admins": [114514, 1234567, 7654321]
 		}
 	],
-	"subscriptions": [
+	"default_config": [
 		{
 			"name": "op-sub",
 			"link": "http://oxygenproxy.com/sub/xxx",
