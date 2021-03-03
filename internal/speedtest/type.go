@@ -1,7 +1,27 @@
 package speedtest
 
+import "sync"
+
+const (
+	Pendding = iota
+	Working
+)
+
 type Host interface {
 	GetURL() string
+}
+
+type Runner struct {
+	mu     sync.RWMutex
+	Status int32
+	Host   Host
+}
+
+func NewRunner(h Host) *Runner {
+	return &Runner{
+		Status: Pendding,
+		Host:   h,
+	}
 }
 
 type Version struct {
