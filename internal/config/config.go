@@ -60,16 +60,21 @@ func GetRunner(runnername string) *Runner {
 }
 
 func GetDefaultConfig(configname string) *Default {
-	file, err := GetConfig()
-	if err != nil {
-		fatal(err)
-	}
-	for _, f := range file.DefaultConfig {
+	defaultConfig := GetAllDefaultConfig()
+	for _, f := range defaultConfig {
 		if f.Name == configname {
 			return f
 		}
 	}
 	return nil
+}
+
+func GetAllDefaultConfig() []*Default {
+	file, err := GetConfig()
+	if err != nil {
+		fatal(err)
+	}
+	return file.DefaultConfig
 }
 
 func fatal(err error) {
