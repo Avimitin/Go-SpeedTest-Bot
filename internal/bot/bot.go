@@ -108,14 +108,17 @@ func cmdStart(b *B, m *M) {
 
 // cmd /ping
 func cmdPing(b *B, m *M) {
-	connected := speedtest.Ping(speedtest.GetHost())
-	var text string
-	if connected {
-		text = "Connect to backend successfully"
-	} else {
-		text = "Unable to connect to the backend, please check out the latest logs."
+	runners := config.GetAllRunner()
+	for _, r := range runners {
+		connected := speedtest.Ping(*r)
+		var text string
+		if connected {
+			text = "Connect to " + r.Name + " successfully"
+		} else {
+			text = "Unable to connect to the " + r.Name
+		}
+		SendT(b, m.Chat.ID, text)
 	}
-	SendT(b, m.Chat.ID, text)
 }
 
 // cmd /status
