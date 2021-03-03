@@ -8,6 +8,19 @@ type M = tgbotapi.Message
 type CMDFunc func(*B, *M)
 type CMD = map[string]CMDFunc
 
+type admins map[int]interface{}
+
+// Auth will check if the given id is an admin or not
+func (a admins) Auth(id int) bool {
+	_, ok := a[id]
+	return ok
+}
+
+// NewAdmin load a list of admin
+func NewAdmin() admins {
+	return make(admins)
+}
+
 var Commands = CMD{
 	"start":        cmdStart,
 	"ping":         cmdPing,
