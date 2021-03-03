@@ -26,55 +26,48 @@ func Ping(h Host) bool {
 }
 
 // GetStatus is used for fetching backend status
-func GetStatus(h *Host) (*Status, error) {
-	resp, err := web.Get(h.GetURL() + "/status")
+func GetStatus(h Host) (*Status, error) {
+	resp, err := web.Get(path.Join(h.GetURL(), "status"))
 	if err != nil {
-		log.Printf("[WebGetError]Unable to connect to backend")
-		return nil, err
+		return nil, fmt.Errorf("get status: %v", err)
 	}
 	var st *Status
 	err = json.Unmarshal(resp, &st)
 	if err != nil {
-		log.Printf("[JsonUnmarshall]Unable to unmarshal data")
-		return nil, err
+		return nil, fmt.Errorf("decode %q: %v", resp, err)
 	}
 	return st, nil
 }
 
 // ReadSubscriptions return list of node information with the given subscription url.
-func ReadSubscriptions(h *Host, sub string) ([]*SubscriptionResp, error) {
+func ReadSubscriptions(h Host, sub string) ([]*SubscriptionResp, error) {
 	data := map[string]string{"url": sub}
-	d, err := json.Marshal(data)
+	jsondata, err := json.Marshal(data)
 	if err != nil {
-		log.Println("[JSONMarshallError]", err)
-		return nil, err
+		return nil, fmt.Errorf("%s not valid", sub)
 	}
-	resp, err := web.JSONPost(h.GetURL()+"/readsubscriptions", d)
+	resp, err := web.JSONPost(path.Join(h.GetURL(), "readsubscriptions"), jsondata)
 	if err != nil {
-		log.Printf("[WebPostError]Unable to connect to backend, %v", err)
-		return nil, err
+		return nil, fmt.Errorf("post sub: %v", err)
 	}
 	var cfg []*SubscriptionResp
 	err = json.Unmarshal(resp, &cfg)
 	if err != nil {
-		log.Println("[JSONError]Unable to unmarshall data", err)
-		return nil, err
+		return nil, fmt.Errorf("%q not valid", resp)
 	}
 	return cfg, nil
 }
 
 // GetResult return the newest speed test result.
-func GetResult(h *Host) (*Result, error) {
-	resp, err := web.Get(h.GetURL() + "/getresults")
+func GetResult(h Host) (*Result, error) {
+	resp, err := web.Get(path.Join(h.GetURL(), "getresults"))
 	if err != nil {
-		log.Println("[WebGetError]Unable to connect to backend")
-		return nil, err
+		return nil, fmt.Errorf("get result: %v", err)
 	}
 	var result Result
 	err = json.Unmarshal(resp, &result)
 	if err != nil {
-		log.Println("[JSONError]Unable to unmarshall data", err)
-		return nil, err
+		return nil, fmt.Errorf("%q not valid", resp)
 	}
 	return &result, nil
 }
