@@ -10,6 +10,21 @@ import (
 	"strings"
 )
 
+// Ping will test if the given host is accessible or not
+func Ping(h Host) bool {
+	resp, err := web.Get(path.Join(h.GetURL(), "getversion"))
+	if err != nil {
+		return false
+	}
+	var v Version
+	err = json.Unmarshal(resp, &v)
+	if err != nil {
+		return false
+	}
+
+	return v.Main != "" && v.WebAPI != ""
+}
+
 // GetStatus is used for fetching backend status
 func GetStatus(h *Host) (*Status, error) {
 	resp, err := web.Get(h.GetURL() + "/status")
