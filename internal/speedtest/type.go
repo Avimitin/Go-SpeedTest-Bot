@@ -1,27 +1,50 @@
 package speedtest
 
-import "sync"
+import (
+	"sync"
+	"sync/atomic"
+)
 
 const (
-	Pendding = iota
+	Pending = iota
 	Working
 )
 
+// Host determine Runner's remote address
 type Host interface {
 	GetURL() string
 }
 
+// Runner store backend address and status
 type Runner struct {
 	mu     sync.RWMutex
 	Status int32
 	Host   Host
 }
 
+// NewRunner return a new pointer to Runner
 func NewRunner(h Host) *Runner {
 	return &Runner{
-		Status: Pendding,
+		Status: Pending,
 		Host:   h,
 	}
+}
+
+// GetRunnerStatus return current status
+// 0 == Pending
+// 1 == Working
+func (r *Runner) GetRunnerStatus() int32 {
+	return atomic.LoadInt32(&r.Status)
+}
+
+// HangUp changed runner status to pending
+func (r *Runner) HangUp() {
+	atomic.CompareAndSwapInt32(&r.Status, Working, Pending)
+}
+
+// Activate changed runner status to working
+func (r *Runner) Activate() {
+	atomic.CompareAndSwapInt32(&r.Status, Pending, Working)
 }
 
 type Version struct {
