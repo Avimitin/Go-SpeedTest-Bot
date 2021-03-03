@@ -105,6 +105,19 @@ func StartTest(h Host, startCFG *StartConfigs, statusChan chan string) {
 	}
 }
 
+func sendStatus(status chan string, content string) error {
+	var err error
+	if status == nil {
+		return errors.New("nil status channel")
+	}
+	defer func() {
+		msg := recover()
+		err = fmt.Errorf("send status: %v", msg)
+	}()
+	status <- content
+	return err
+}
+
 // IncludeRemarks will select all the configs with the given remarks.
 func IncludeRemarks(configs []*SubscriptionResp, incRems []string) []*SubscriptionResp {
 	var newcfg []*SubscriptionResp
