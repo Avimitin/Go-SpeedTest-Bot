@@ -77,28 +77,31 @@ func GetResult(h Host) (*Result, error) {
 // If error happen function will pass error message into status chan.
 // If state is not null it will pass status: ["running" / "done"].
 // If you are calling this method without authorized of given unexpected config it will pass error message.
-func StartTest(h *Host, startCFG *StartConfigs, status chan string) {
+func StartTest(h Host, startCFG *StartConfigs, statusChan chan string) {
 	d, err := json.Marshal(startCFG)
 	if err != nil {
-		log.Println("[StartTest]Unable to marshall data", err)
+		e := sendStatus(statusChan, "invalid start config")
+		if e != nil {
+			fmt.Println(e)
+			os.Exit(0)
+		}
 		return
 	}
-	resp, err := web.JSONPostWithTimeout(h.GetURL()+"/start", d, 0)
+	resp, err := web.JSONPostWithTimeout(path.Join(h.GetURL(), "start"), d, 0)
 	if err != nil {
-		log.Println("[StartTest]Unable to connect to backend")
+		sendStatus(statusChan, fmt.Sprintf("speed test failed, response: %q", resp))
 		return
 	}
 	var state Status
 	err = json.Unmarshal(resp, &state)
 	if err != nil {
-		log.Println("[StartTest]Fail to unmarshall data")
-		status <- err.Error() + "\nOrigin text:" + string(resp)
+		sendStatus(statusChan, fmt.Sprintf(""))
 		return
 	}
 	if state.State != "" {
-		status <- state.State
+		sendStatus(statusChan, state.State)
 	} else {
-		status <- state.Error
+		sendStatus(statusChan, state.Error)
 	}
 }
 
