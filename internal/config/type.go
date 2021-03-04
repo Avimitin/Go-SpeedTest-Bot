@@ -1,5 +1,7 @@
 package config
 
+import "sync/atomic"
+
 // Configuration contains bot, runner configuration
 // at run time; Also store user define default
 // subscription config
@@ -15,9 +17,32 @@ type Global struct {
 }
 
 type Runner struct {
+	Status int32  // Status store runner status at local
 	Name   string `json:"name"`
 	Host   Host   `json:"host"`
 	Admins []int  `json:"admins"`
+}
+
+const (
+	Pending = iota
+	Working
+)
+
+// GetRunnerStatus return current status
+// 0 == Pending
+// 1 == Working
+func (r *Runner) GetRunnerStatus() int32 {
+	return atomic.LoadInt32(&r.Status)
+}
+
+// HangUp changed runner status to pending
+func (r *Runner) HangUp() {
+	atomic.CompareAndSwapInt32(&r.Status, Working, Pending)
+}
+
+// Activate changed runner status to working
+func (r *Runner) Activate() {
+	atomic.CompareAndSwapInt32(&r.Status, Pending, Working)
 }
 
 type Host struct {
