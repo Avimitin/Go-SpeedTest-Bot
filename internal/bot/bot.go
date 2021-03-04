@@ -251,12 +251,6 @@ func cmdListSubs(b *B, m *M) {
 	SendP(b, m.Chat.ID, text, "html")
 }
 
-var Def *DefaultConfig = &DefaultConfig{
-	Mode:     "TCP_PING",
-	Method:   "ST_ASYNC",
-	Interval: 300,
-}
-
 // cmd /set_default
 func cmdSelectDefaultSub(b *B, m *M) {
 	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) < 2 {
@@ -280,24 +274,6 @@ func cmdSelectDefaultSub(b *B, m *M) {
 		}
 	}
 	SendT(b, m.Chat.ID, "you can't access the config.")
-}
-
-// cmd /set_def_mode
-func cmdSetDefaultModeAndMethod(b *B, m *M) {
-	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) < 3 {
-		SendT(b, m.Chat.ID, "Require mode or method.\n"+
-			"Use case:/set_def_mode -M TCP_PING -m ST_ASYNC (all in upper case)\n")
-		return
-	}
-	args := parseMsgText(m.Text)
-	Def.Mode = args["-M"]
-	Def.Method = args["-m"]
-	SendT(b, m.Chat.ID, "Default test mode now is "+Def.Mode+"\nDefault test method now is "+Def.Method)
-}
-
-// cmd /run_def
-func cmdRunDefault(b *B, m *M) {
-	startTestWithURL(b, m, Def.Url, Def.Method, Def.Mode, Def.Include, Def.Exclude)
 }
 
 var (
