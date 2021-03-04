@@ -264,16 +264,6 @@ func cmdSelectDefaultSub(b *B, m *M) {
 		SendT(b, m.Chat.ID, "Remarks not found.")
 		return
 	}
-	for _, admin := range subsFile.Admins {
-		if admin == m.From.ID {
-			Def.Remarks = subsFile.Name
-			Def.Url = subsFile.Link
-			Def.Chat = subsFile.Chat
-			SendP(b, m.Chat.ID, fmt.Sprintf("Default has set to <a href=\"%s\">%s</a>", Def.Url, Def.Remarks), "HTML")
-			return
-		}
-	}
-	SendT(b, m.Chat.ID, "you can't access the config.")
 }
 
 var (
@@ -282,25 +272,36 @@ var (
 
 // cmd /schedule
 func cmdSchedule(b *B, m *M) {
-	if len(strings.Fields(m.Text)) < 2 {
+	if len(strings.Fields(m.Text)) < 3 {
 		SendP(b, m.Chat.ID, "Require parameters like: <code>start/stop/status</code>\n"+
-			"Use case: /schedule start", "HTML")
+			"Use case: /schedule start <CONFIG_NAME>", "HTML")
 		return
 	}
-	arg := strings.Fields(m.Text)[1]
-	switch arg {
+	args := strings.Fields(m.Text)
+	switch args[1] {
 	case "start":
-		if Def.Chat == 0 || Def.Url == "" || Def.Remarks == "" {
-			SendT(b, m.Chat.ID, "You don't set up default config yet. Please use /set_default to set your config. Also you can check out /show_def for your current default setting.")
+		subsFile := config.GetDefaultConfig(args[2])
+		if subsFile == nil {
+			SendT(b, m.Chat.ID, "config specific not found.")
 			return
 		}
-
-		if atomic.LoadInt32(&task.status) == RUNNING {
-			SendT(b, m.Chat.ID, "There is a job running in background now.")
+		var haveAccess bool
+		for _, admin := range subsFile.Admins {
+			if admin == m.From.ID {
+				haveAccess = true
+				break
+			}
+		}
+		if !haveAccess {
+			SendT(b, m.Chat.ID, "you don't have access to this profile")
 			return
 		}
-		task.start(b)
-		SendT(b, m.Chat.ID, "Jobs started")
+		runner := config.GetRunner(subsFile.DefaultRunner)
+		if runner == nil {
+			SendT(b, m.Chat.ID, "the runner name specific in default config is not found")
+			return
+		}
+		go runner.StartScheduleJobs(subsFile)
 	case "stop":
 		task.Stop(0)
 		SendT(b, m.Chat.ID, "Schedule jobs has stopped, but you should checkout backend for it's status.")
@@ -333,34 +334,4 @@ func cmdSetInterval(b *B, m *M) {
 	}
 	SetInterval(intArg)
 	SendT(b, m.Chat.ID, "Interval has set to "+arg+"s")
-}
-
-// cmd /set_exin
-func cmdSetDefaultExcludeOrInclude(b *B, m *M) {
-	if args := strings.Fields(m.Text); len(args) > 2 {
-		method := args[1]
-		keys := args[2:]
-		if method == "exclude" {
-			Def.Exclude = make([]string, len(keys))
-			copy(Def.Exclude, keys)
-			SendT(b, m.Chat.ID, fmt.Sprintf("Default exclude has set to: %v", Def.Exclude))
-			return
-		}
-		if method == "include" {
-			Def.Include = make([]string, len(keys))
-			copy(Def.Include, keys)
-			SendT(b, m.Chat.ID, fmt.Sprintf("Default include has set to: %v", Def.Include))
-			return
-		}
-		SendT(b, m.Chat.ID, "Unknown method.")
-		return
-	}
-	SendP(b, m.Chat.ID, "Usage: /set_exin [exclude/include] keyword1 keyword2\n\n"+
-		"Use case: <code>/set_exin exclude 官网 剩余流量 台 香港</code>\n"+
-		"(Fuzz match is supported)", "html")
-}
-
-// cmd /show_def
-func cmdShowDefault(b *B, m *M) {
-	SendT(b, m.Chat.ID, fmt.Sprintf("%+v", Def))
 }
