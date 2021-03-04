@@ -24,13 +24,11 @@ type Runner struct {
 }
 
 const (
-	Pending = iota
-	Working
+	Pending = iota // 0 == Pending
+	Working        // 1 == Working
 )
 
 // GetRunnerStatus return current status
-// 0 == Pending
-// 1 == Working
 func (r *Runner) GetRunnerStatus() int32 {
 	return atomic.LoadInt32(&r.Status)
 }
