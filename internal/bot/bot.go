@@ -169,7 +169,7 @@ func formatResult(r *speedtest.Result) string {
 func cmdResult(b *B, m *M) {
 	args := strings.Fields(m.Text)
 	if len(args) < 2 {
-		SendT(b, m.Chat.ID, "Usage: /status <runner-name>")
+		SendT(b, m.Chat.ID, "Usage: /result <runner-name>")
 		return
 	}
 	runner := config.GetRunner(args[1])
