@@ -282,7 +282,7 @@ var (
 
 // cmd /schedule
 func cmdSchedule(b *B, m *M) {
-	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) < 2 {
+	if len(strings.Fields(m.Text)) < 2 {
 		SendP(b, m.Chat.ID, "Require parameters like: <code>start/stop/status</code>\n"+
 			"Use case: /schedule start", "HTML")
 		return
