@@ -345,7 +345,8 @@ func cmdSetInterval(b *B, m *M) {
 		SendT(b, m.Chat.ID, "Seconds are require as parameters\n"+
 			"Use case: /set_interval 1\n"+
 			"This will let the schedule task to start every 1 seconds.\n"+
-			"But because of the python backend, too frequent request will cause performance problem. We recommended you use 300 second as parameter or more.")
+			"But because of the python backend, too frequent request will cause performance problem."+
+			"We recommended you use 300 second as parameter or more.")
 		return
 	}
 	arg := strings.Fields(m.Text)[1]
