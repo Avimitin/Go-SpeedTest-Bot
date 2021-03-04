@@ -30,8 +30,9 @@ func (h *Host) GetURL() string {
 }
 
 type Default struct {
-	Name   string `json:"name"`
-	Link   string `json:"link"`
-	Chat   int64  `json:"chat"`
-	Admins []int  `json:"admins"`
+	Name          string `json:"name"`
+	Link          string `json:"link"`
+	Chat          int64  `json:"chat"`
+	Admins        []int  `json:"admins"`
+	DefaultRunner string `json:"default_runner"`
 }
