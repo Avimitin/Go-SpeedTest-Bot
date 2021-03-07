@@ -3,7 +3,14 @@ package runner
 import "sync/atomic"
 
 type Runner struct {
-	status int32  // Status store runner status at local
+	// status store runner status at local
+	status int32
+
+	// c is a channel to connect with runner inner goroutine,
+	// should use Runner.NewChan to initialize it and get it,
+	// and use Runner.CloseChan to close it.
+	c chan int32
+
 	Name   string `json:"name"`
 	Host   *Host  `json:"host"`
 	Admins []int  `json:"admins"`
@@ -22,6 +29,15 @@ const (
 	Pending = iota // 0 == Pending
 	Working        // 1 == Working
 )
+
+func (r *Runner) NewChan() chan int32 {
+	r.c = make(chan int32)
+	return r.c
+}
+
+func (r *Runner) CloseChan() {
+	close(r.c)
+}
 
 // IsPending return boolen value about runner is pending or not
 func (r *Runner) IsPending() bool {
