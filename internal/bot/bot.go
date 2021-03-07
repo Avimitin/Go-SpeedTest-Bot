@@ -19,8 +19,7 @@ var defBot *B
 func NewBot() *B {
 	bot, err := tgbotapi.NewBotAPI(config.GetToken())
 	if err != nil {
-		log.Printf("initialize bot: %v", err)
-		os.Exit(1)
+		log.Fatalf("initialize bot: %v", err)
 	}
 	return bot
 }
