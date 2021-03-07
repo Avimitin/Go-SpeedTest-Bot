@@ -1,118 +1,64 @@
 package bot
 
 import (
+	"fmt"
+	"go-speedtest-bot/internal/config"
+	"go-speedtest-bot/internal/runner"
 	"go-speedtest-bot/internal/speedtest"
 	"log"
-	"sync/atomic"
 	"time"
 )
 
-const (
-	STOPPED int32 = iota
-	RUNNING
-)
-
-type Job struct {
-	status int32
-	stop   chan int32
-}
-
-func NewJob() *Job {
-	return &Job{
-		status: STOPPED,
-		stop:   make(chan int32, 1),
-	}
-}
-
-func (j *Job) running() {
-	ok := atomic.CompareAndSwapInt32(&j.status, STOPPED, RUNNING)
-	if ok {
-		log.Println("[INFO]Schedule job has started.")
-	}
-}
-
-func (j *Job) stopped() {
-	ok := atomic.CompareAndSwapInt32(&j.status, RUNNING, STOPPED)
-	if ok {
-		log.Println("[INFO]Schedule job has stopped.")
-	}
-}
-
-func (j *Job) start(b *B) {
-	log.Println("[Schedule]New goroutine started")
-	atomic.CompareAndSwapInt32(&j.status, STOPPED, RUNNING)
-	go j.Run(b)
-}
-
-func (j *Job) Run(b *B) {
-	getTestCFG := func() *speedtest.StartConfigs {
-		nodes, err := speedtest.ReadSubscriptions(speedtest.GetHost(), Def.Url)
-		if err != nil {
-			j.stopped()
-			log.Println("[ReadSubscriptionsError]", err)
-			SendT(b, Def.Chat, err.Error())
-			return nil
-		}
-		if len(Def.Include) != 0 {
-			nodes = speedtest.IncludeRemarks(nodes, Def.Include)
-		}
-		if len(Def.Exclude) != 0 {
-			nodes = speedtest.ExcludeRemarks(nodes, Def.Exclude)
-		}
-		return speedtest.NewStartConfigs(Def.Method, Def.Mode, nodes)
-	}
-	host := speedtest.GetHost()
-	stChan := make(chan string)
-	period := time.Duration(Def.Interval) * time.Second
-	t := time.NewTicker(period)
+func StartScheduleJobs(runner *runner.Runner, subsConfig *config.Default) {
+	runner.Activate()
+	period := (time.Duration(subsConfig.Interval) * time.Second) / 2
+	heartBeat := time.NewTicker(period)
+	runnerCh := runner.NewChan()
+	statusCh := make(chan string)
 	for {
 		select {
-		case <-t.C:
-			log.Println("[Schedule]New test started")
-			cfg := getTestCFG()
-			if cfg == nil {
-				j.stopped()
-				log.Println("[Schedule]Schedule jobs exit: get nil config.")
+		case <-heartBeat.C:
+			var err error
+			var startConfigs *speedtest.StartConfigs
+			startConfigs, err = newTestConfig(runner, subsConfig)
+			if err != nil {
+				log.Println(err)
+				SendTF(subsConfig.Chat, "schedule job: %v", err)
 				return
 			}
-			go speedtest.StartTest(host, cfg, stChan)
-			t.Stop()
-		case s := <-stChan:
-			if s == "done" {
-				AlertHandler(fetchResult(), b)
-				t.Reset(period)
+			heartBeat.Stop()
+			go speedtest.StartTest(*runner, startConfigs, statusCh)
+			log.Printf("runner %s start new test", runner.Name)
+		case state := <-statusCh:
+			if state == "done" {
+				log.Printf("runner %s finish one test", runner.Name)
+				handleResult(runner)
 			} else {
-				log.Println("[SpeedTestError]" + s)
-				SendT(b, Def.Chat, s+" Please restart schedule jobs.")
-				j.stopped()
+				log.Printf("speedtest error: %s", state)
+				SendT(subsConfig.Chat, "speedtest error: "+state+" \nSchedule job exit.")
+				runner.HangUp()
 				return
 			}
-		case state := <-j.stop:
-			switch state {
-			case -1:
-				log.Println("[Schedule]Jobs exit unexpectedly")
-			case 0:
-				log.Println("[Schedule]loop stopped")
-			}
+			heartBeat.Reset(period)
+		case <-runnerCh:
+			runner.HangUp()
 			return
 		}
 	}
 }
 
-func (j *Job) Stop(state int32) {
-	j.stopped()
-	j.stop <- state
-}
-
-func SetInterval(i int) {
-	Def.Interval = i
-}
-
-func fetchResult() []speedtest.ResultInfo {
-	result, err := speedtest.GetResult(speedtest.GetHost())
-	if err != nil {
-		log.Println(err.Error())
-		return nil
+func newTestConfig(runner *runner.Runner, subsConfig *config.Default) (*speedtest.StartConfigs, error) {
+	var retry int
+	nodes, err := speedtest.ReadSubscriptions(*runner, subsConfig.Link)
+	for err != nil {
+		if retry > 5 {
+			return nil, fmt.Errorf("retry after 5 times: %v", err)
+		}
+		nodes, err = speedtest.ReadSubscriptions(*runner, subsConfig.Link)
 	}
-	return result.Result
+	return speedtest.NewStartConfigs("ST_ASYNC", "TCP_PING", nodes), nil
+}
+
+func handleResult(r *runner.Runner) {
+
 }
