@@ -13,6 +13,8 @@ import (
 	"sync/atomic"
 )
 
+var defBot *B
+
 // NewBot return a bot instance
 func NewBot() *B {
 	bot, err := tgbotapi.NewBotAPI(config.GetToken())
@@ -24,19 +26,19 @@ func NewBot() *B {
 }
 
 // SendT send text message
-func SendT(bot *B, cid int64, text string) {
+func SendT(cid int64, text string) {
 	msg := tgbotapi.NewMessage(cid, text)
-	_, err := bot.Send(msg)
+	_, err := defBot.Send(msg)
 	if err != nil {
 		log.Println("send %q: %v", text[:10]+"...", err)
 	}
 }
 
 // SendP send parsed text message
-func SendP(bot *B, cid int64, text string, format string) {
+func SendP(cid int64, text string, format string) {
 	msg := tgbotapi.NewMessage(cid, text)
 	msg.ParseMode = format
-	_, err := bot.Send(msg)
+	_, err := defBot.Send(msg)
 	if err != nil {
 		log.Println("send %q: %v", text[:10]+"...", err)
 	}
@@ -89,7 +91,7 @@ func CMDHandler(bot *B, msg *M) {
 // cmd /start
 func cmdStart(b *B, m *M) {
 	text := "Here is a bot who can help you manage all your proxy."
-	SendT(b, m.Chat.ID, text)
+	SendT(m.Chat.ID, text)
 }
 
 // cmd /ping
@@ -103,7 +105,7 @@ func cmdPing(b *B, m *M) {
 		} else {
 			text = "Unable to connect to the " + r.Name
 		}
-		SendT(b, m.Chat.ID, text)
+		SendT(m.Chat.ID, text)
 	}
 }
 
@@ -111,23 +113,23 @@ func cmdPing(b *B, m *M) {
 func cmdStatus(b *B, m *M) {
 	args := strings.Fields(m.Text)
 	if len(args) < 2 {
-		SendT(b, m.Chat.ID, "Usage: /status <runner-name>")
+		SendT(m.Chat.ID, "Usage: /status <runner-name>")
 		return
 	}
 	runner := config.GetRunner(args[1])
 	result, err := speedtest.GetStatus(*runner)
 	if err != nil {
-		SendT(b, m.Chat.ID, fmt.Sprint(err))
+		SendT(m.Chat.ID, fmt.Sprint(err))
 		return
 	}
-	SendT(b, m.Chat.ID, "Status: "+result.State)
+	SendT(m.Chat.ID, "Status: "+result.State)
 }
 
 // cmd /read_sub
 func cmdReadSub(b *B, m *M) {
 	args := strings.Fields(m.Text)
 	if len(args) < 3 {
-		SendT(b, m.Chat.ID, "Usage:\n/read_sub <sub> <runner>")
+		SendT(m.Chat.ID, "Usage:\n/read_sub <sub> <runner>")
 		return
 	}
 	url := args[1]
@@ -135,7 +137,7 @@ func cmdReadSub(b *B, m *M) {
 	runner := config.GetRunner(runnername)
 	subResps, err := speedtest.ReadSubscriptions(*runner, url)
 	if err != nil {
-		SendT(b, m.Chat.ID, fmt.Sprint(err))
+		SendT(m.Chat.ID, fmt.Sprint(err))
 		return
 	}
 	var text string
@@ -144,7 +146,7 @@ func cmdReadSub(b *B, m *M) {
 			text += subResp.Type + " " + subResp.Config.Remarks + "\n"
 		}
 	}
-	SendT(b, m.Chat.ID, text)
+	SendT(m.Chat.ID, text)
 }
 
 func formatResult(r *speedtest.Result) string {
@@ -169,45 +171,45 @@ func formatResult(r *speedtest.Result) string {
 func cmdResult(b *B, m *M) {
 	args := strings.Fields(m.Text)
 	if len(args) < 2 {
-		SendT(b, m.Chat.ID, "Usage: /result <runner-name>")
+		SendT(m.Chat.ID, "Usage: /result <runner-name>")
 		return
 	}
 	runner := config.GetRunner(args[1])
 	result, err := speedtest.GetResult(*runner)
 	if err != nil {
-		SendT(b, m.Chat.ID, fmt.Sprint(err))
+		SendT(m.Chat.ID, fmt.Sprint(err))
 		return
 	}
 	if fresult := formatResult(result); len(fresult) != 0 {
-		SendT(b, m.Chat.ID, fresult)
+		SendT(m.Chat.ID, fresult)
 		return
 	}
-	SendT(b, m.Chat.ID, "No result yet")
+	SendT(m.Chat.ID, "No result yet")
 }
 
 func startTestWithURL(b *B, m *M, url string, method string, mode string, include []string, exclude []string) {
 	args := strings.Fields(m.Text)
 	if len(args) < 2 {
-		SendT(b, m.Chat.ID, "Usage: /run_url <runner-name>")
+		SendT(m.Chat.ID, "Usage: /run_url <runner-name>")
 		return
 	}
 	runner := config.GetRunner(args[1])
 	result, err := speedtest.GetStatus(*runner)
 	if err != nil {
-		SendT(b, m.Chat.ID, err.Error())
+		SendT(m.Chat.ID, err.Error())
 		return
 	}
 	if result == nil {
-		SendT(b, m.Chat.ID, "Unable to fetch backend status, please try again later")
+		SendT(m.Chat.ID, "Unable to fetch backend status, please try again later")
 		return
 	}
 	if result.State == "running" {
-		SendT(b, m.Chat.ID, "There is still a test running, please wait for all works done.")
+		SendT(m.Chat.ID, "There is still a test running, please wait for all works done.")
 		return
 	}
 	nodes, err := speedtest.ReadSubscriptions(*runner, url)
 	if err != nil {
-		SendT(b, m.Chat.ID, err.Error())
+		SendT(m.Chat.ID, err.Error())
 		return
 	}
 	if len(include) != 0 {
@@ -218,7 +220,7 @@ func startTestWithURL(b *B, m *M, url string, method string, mode string, includ
 	}
 	cfg := speedtest.NewStartConfigs(method, mode, nodes)
 	go speedtest.StartTest(*runner, cfg, make(chan string, 1))
-	SendT(b, m.Chat.ID, "Test started, you can use /result to check latest result.")
+	SendT(m.Chat.ID, "Test started, you can use /result to check latest result.")
 }
 
 func parseMsgText(s string) map[string]string {
@@ -228,7 +230,7 @@ func parseMsgText(s string) map[string]string {
 // cmd /run_url
 func cmdStartTestWithURL(b *B, m *M) {
 	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) < 3 {
-		SendP(b, m.Chat.ID, "Require subscriptions url.\n"+
+		SendP(m.Chat.ID, "Require subscriptions url.\n"+
 			"Use case: <code>/run_url -u https://example.com -M TCP_PING -m ST_ASYNC</code>\n(all in upper case)", "HTML")
 		return
 	}
@@ -248,20 +250,20 @@ func cmdListSubs(b *B, m *M) {
 			}
 		}
 	}
-	SendP(b, m.Chat.ID, text, "html")
+	SendP(m.Chat.ID, text, "html")
 }
 
 // cmd /set_default
 func cmdSelectDefaultSub(b *B, m *M) {
 	if len(m.Text)-1 == len(m.Command()) || len(strings.Fields(m.Text)) < 2 {
-		SendT(b, m.Chat.ID, "Require one arguments. \nUse case: /set_default xxx")
+		SendT(m.Chat.ID, "Require one arguments. \nUse case: /set_default xxx")
 		return
 	}
 
 	defname := strings.Fields(m.Text)[1]
 	subsFile := config.GetDefaultConfig(defname)
 	if subsFile == nil {
-		SendT(b, m.Chat.ID, "Remarks not found.")
+		SendT(m.Chat.ID, "Remarks not found.")
 		return
 	}
 }
@@ -273,7 +275,7 @@ var (
 // cmd /schedule
 func cmdSchedule(b *B, m *M) {
 	if len(strings.Fields(m.Text)) < 3 {
-		SendP(b, m.Chat.ID, "Require parameters like: <code>start/stop/status</code>\n"+
+		SendP(m.Chat.ID, "Require parameters like: <code>start/stop/status</code>\n"+
 			"Use case: /schedule start <CONFIG_NAME>", "HTML")
 		return
 	}
@@ -282,7 +284,7 @@ func cmdSchedule(b *B, m *M) {
 	case "start":
 		subsFile := config.GetDefaultConfig(args[2])
 		if subsFile == nil {
-			SendT(b, m.Chat.ID, "config specific not found.")
+			SendT(m.Chat.ID, "config specific not found.")
 			return
 		}
 		var haveAccess bool
@@ -293,33 +295,33 @@ func cmdSchedule(b *B, m *M) {
 			}
 		}
 		if !haveAccess {
-			SendT(b, m.Chat.ID, "you don't have access to this profile")
+			SendT(m.Chat.ID, "you don't have access to this profile")
 			return
 		}
 		runner := config.GetRunner(subsFile.DefaultRunner)
 		if runner == nil {
-			SendT(b, m.Chat.ID, "the runner name specific in default config is not found")
+			SendT(m.Chat.ID, "the runner name specific in default config is not found")
 			return
 		}
-		go runner.StartScheduleJobs(subsFile)
+		go StartScheduleJobs(runner, subsFile)
 	case "stop":
 		task.Stop(0)
-		SendT(b, m.Chat.ID, "Schedule jobs has stopped, but you should checkout backend for it's status.")
+		SendT(m.Chat.ID, "Schedule jobs has stopped, but you should checkout backend for it's status.")
 	case "status":
 		if atomic.LoadInt32(&task.status) == RUNNING {
-			SendT(b, m.Chat.ID, "jobs running.")
+			SendT(m.Chat.ID, "jobs running.")
 			return
 		}
-		SendT(b, m.Chat.ID, "There is no jobs running in the background.")
+		SendT(m.Chat.ID, "There is no jobs running in the background.")
 	default:
-		SendT(b, m.Chat.ID, "Unknown parameter.")
+		SendT(m.Chat.ID, "Unknown parameter.")
 	}
 }
 
 // cmd /set_interval
 func cmdSetInterval(b *B, m *M) {
 	if len(strings.Fields(m.Text)) < 2 {
-		SendT(b, m.Chat.ID, "Seconds are require as parameters\n"+
+		SendT(m.Chat.ID, "Seconds are require as parameters\n"+
 			"Use case: /set_interval 1\n"+
 			"This will let the schedule task to start every 1 seconds.\n"+
 			"But because of the python backend, too frequent request will cause performance problem."+
@@ -329,9 +331,9 @@ func cmdSetInterval(b *B, m *M) {
 	arg := strings.Fields(m.Text)[1]
 	intArg, err := strconv.Atoi(arg)
 	if err != nil {
-		SendT(b, m.Chat.ID, "Unexpected value: "+arg)
+		SendT(m.Chat.ID, "Unexpected value: "+arg)
 		return
 	}
 	SetInterval(intArg)
-	SendT(b, m.Chat.ID, "Interval has set to "+arg+"s")
+	SendT(m.Chat.ID, "Interval has set to "+arg+"s")
 }
