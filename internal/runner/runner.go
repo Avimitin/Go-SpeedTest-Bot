@@ -3,7 +3,7 @@ package runner
 import "sync/atomic"
 
 type Runner struct {
-	Status int32  // Status store runner status at local
+	status int32  // Status store runner status at local
 	Name   string `json:"name"`
 	Host   *Host  `json:"host"`
 	Admins []int  `json:"admins"`
@@ -35,15 +35,15 @@ func (r *Runner) IsWorking() bool {
 
 // GetRunnerStatus return current status
 func (r *Runner) GetRunnerStatus() int32 {
-	return atomic.LoadInt32(&r.Status)
+	return atomic.LoadInt32(&r.status)
 }
 
 // HangUp changed runner status to pending
 func (r *Runner) HangUp() {
-	atomic.CompareAndSwapInt32(&r.Status, Working, Pending)
+	atomic.CompareAndSwapInt32(&r.status, Working, Pending)
 }
 
 // Activate changed runner status to working
 func (r *Runner) Activate() {
-	atomic.CompareAndSwapInt32(&r.Status, Pending, Working)
+	atomic.CompareAndSwapInt32(&r.status, Pending, Working)
 }
