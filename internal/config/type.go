@@ -22,4 +22,5 @@ type Default struct {
 	Chat          int64  `json:"chat"`
 	Admins        []int  `json:"admins"`
 	DefaultRunner string `json:"default_runner"`
+	Interval      int    `json:"interval"`
 }
