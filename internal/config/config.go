@@ -23,6 +23,7 @@ func findConfigFilePath() string {
 	return path.Join(".", "config", "config.json")
 }
 
+// LoadConfig is a reusable initialize config function
 func LoadConfig() {
 	path := findConfigFilePath()
 	configFile, err := ioutil.ReadFile(path)
@@ -35,14 +36,17 @@ func LoadConfig() {
 	}
 }
 
+// GetToken return bot token
 func GetToken() string {
 	return userSetting.Global.Token
 }
 
+// GetAllRunner return all predefine runner
 func GetAllRunner() []*Runner {
 	return userSetting.Runner
 }
 
+// ListAllRunners return all the usable runner name
 func ListAllRunners() string {
 	runners := GetAllRunner()
 	var text string = "available runner:\n"
@@ -52,6 +56,7 @@ func ListAllRunners() string {
 	return text
 }
 
+// GetRunner return a specific runner
 func GetRunner(runnername string) *Runner {
 	runners := GetAllRunner()
 	for _, f := range runners {
@@ -62,6 +67,7 @@ func GetRunner(runnername string) *Runner {
 	return nil
 }
 
+// GetDefaultConfig return default speedtest config
 func GetDefaultConfig(configname string) *Default {
 	defaultConfig := GetAllDefaultConfig()
 	for _, f := range defaultConfig {
@@ -72,6 +78,7 @@ func GetDefaultConfig(configname string) *Default {
 	return nil
 }
 
+// GetAllDefaultConfig return all the default config
 func GetAllDefaultConfig() []*Default {
 	return userSetting.DefaultConfig
 }
