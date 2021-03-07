@@ -49,14 +49,14 @@ func SendP(cid int64, text string, format string) {
 // If logInfo, program will print all the message.
 // If clean, program will clean all the out of date message.
 func Listen(debug bool, logInfo bool, clean bool) {
-	bot := NewBot()
-	bot.Debug = debug
-	log.Println("Authorized on account", bot.Self.UserName)
+	defBot = NewBot()
+	defBot.Debug = debug
+	log.Println("Authorized on account", defBot.Self.UserName)
 
 	admins := NewAdmin()
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
-	updates, err := bot.GetUpdatesChan(u)
+	updates, err := defBot.GetUpdatesChan(u)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -73,7 +73,7 @@ func Listen(debug bool, logInfo bool, clean bool) {
 			continue
 		}
 		if admins.Auth(update.Message.From.ID) {
-			go CMDHandler(bot, update.Message)
+			go CMDHandler(defBot, update.Message)
 		}
 	}
 }
