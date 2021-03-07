@@ -2,10 +2,14 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"path"
+)
+
+var (
+	userSetting *Configuration
 )
 
 func findConfigFilePath() string {
@@ -19,34 +23,33 @@ func findConfigFilePath() string {
 	return path.Join(".", "config", "config.json")
 }
 
-func GetConfig() (*Configuration, error) {
+func LoadConfig() {
 	path := findConfigFilePath()
 	configFile, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("read %q: %v", path, err)
+		log.Fatalf("read %q: %v", path, err)
 	}
-	var cfg *Configuration
-	err = json.Unmarshal(configFile, &cfg)
+	err = json.Unmarshal(configFile, &userSetting)
 	if err != nil {
-		return nil, fmt.Errorf("parse file: %v", err)
+		log.Fatalf("parse file: %v", err)
 	}
-	return cfg, nil
 }
 
 func GetToken() string {
-	file, err := GetConfig()
-	if err != nil {
-		fatal(err)
-	}
-	return file.Global.Token
+	return userSetting.Global.Token
 }
 
 func GetAllRunner() []*Runner {
-	file, err := GetConfig()
-	if err != nil {
-		fatal(err)
+	return userSetting.Runner
+}
+
+func ListAllRunners() string {
+	runners := GetAllRunner()
+	var text string = "available runner:\n"
+	for _, r := range runners {
+		text += r.Name + "\n"
 	}
-	return file.Runner
+	return text
 }
 
 func GetRunner(runnername string) *Runner {
@@ -70,14 +73,5 @@ func GetDefaultConfig(configname string) *Default {
 }
 
 func GetAllDefaultConfig() []*Default {
-	file, err := GetConfig()
-	if err != nil {
-		fatal(err)
-	}
-	return file.DefaultConfig
-}
-
-func fatal(err error) {
-	fmt.Println(err)
-	os.Exit(1)
+	return userSetting.DefaultConfig
 }
