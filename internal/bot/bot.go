@@ -44,12 +44,12 @@ func SendP(cid int64, text string, format string) {
 	}
 }
 
-// Launch is the robot's main methods. Calling this method will
+// Listen is the robot's main methods. Calling this method will
 // enter a loop and continuously listen for messages.
 // If debug, bot will enable debug mode.
 // If logInfo, program will print all the message.
 // If clean, program will clean all the out of date message.
-func Launch(debug bool, logInfo bool, clean bool) {
+func Listen(debug bool, logInfo bool, clean bool) {
 	bot := NewBot()
 	bot.Debug = debug
 	log.Println("Authorized on account", bot.Self.UserName)
