@@ -41,6 +41,11 @@ func SendP(cid int64, text string, format string) {
 	}
 }
 
+// SendTF send text with formated content
+func SendTF(cid int64, content string, args ...interface{}) {
+	SendT(cid, fmt.Sprintf(content, args))
+}
+
 // Listen is the robot's main methods. Calling this method will
 // enter a loop and continuously listen for messages.
 // If debug, bot will enable debug mode.
@@ -301,12 +306,13 @@ func cmdSchedule(b *B, m *M) {
 			return
 		}
 		if runner.IsWorking() {
-			SendT(m.Chat.ID, "runner is working.")
+			SendTF(m.Chat.ID, "runner %s is handling other work", runner.Name)
 			return
 		}
 		go StartScheduleJobs(runner, subsFile)
 	case "stop":
 		runner.HangUp()
+		runner.CloseChan()
 		SendT(m.Chat.ID,
 			"Schedule jobs has been stopped, "+
 				"but backend speedtest doesn't stop"+
