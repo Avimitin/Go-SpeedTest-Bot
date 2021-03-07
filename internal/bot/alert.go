@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"fmt"
 	"go-speedtest-bot/internal/speedtest"
 	"time"
 )
@@ -55,26 +56,29 @@ func DelRecord(record string) {
 	}
 }
 
-func AlertHandler(results []speedtest.ResultInfo, b *B) {
+func AlertHandler(cid int64, results []speedtest.ResultInfo) {
+	var text string
 	for _, r := range results {
 		if r.Ping < 0.0001 || r.GPing < 0.0001 {
 			if !HasRecode(r.Remarks) {
-				Alert(b, r.Remarks)
+				text += alertNotifyLn(r.Remarks)
 			}
 			AppendDiag(r.Remarks)
 			continue
 		}
 		if HasRecode(r.Remarks) {
 			DelRecord(r.Remarks)
-			RecoverNotice(b, r.Remarks, CheckRecord(r.Remarks).OfflineDuration.String())
+			text += recoverNotifyLn(r.Remarks, CheckRecord(r.Remarks).OfflineDuration)
 		}
 	}
+
+	SendT(cid, text)
 }
 
-func Alert(b *B, remark string) {
-	SendT(b, Def.Chat, remark+" offline.")
+func alertNotifyLn(remark string) string {
+	return fmt.Sprintf("%s offline\n", remark)
 }
 
-func RecoverNotice(b *B, remark string, duration string) {
-	SendT(b, Def.Chat, remark+" now online. Offline nearly "+duration)
+func recoverNotifyLn(remark string, duration time.Duration) string {
+	return fmt.Sprintf("%s has recovered, offline nearly %v\n", remark, duration)
 }
