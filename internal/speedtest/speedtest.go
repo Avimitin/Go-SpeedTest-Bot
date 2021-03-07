@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"go-speedtest-bot/internal/config"
+	"go-speedtest-bot/internal/runner"
 	"go-speedtest-bot/internal/web"
 	"os"
 	"path"
@@ -12,7 +12,7 @@ import (
 )
 
 // Ping will test if the given host is accessible or not
-func Ping(r config.Runner) bool {
+func Ping(r runner.Runner) bool {
 	resp, err := web.Get(path.Join(r.Host.GetURL(), "getversion"))
 	if err != nil {
 		return false
@@ -26,7 +26,7 @@ func Ping(r config.Runner) bool {
 }
 
 // GetStatus is used for fetching backend status
-func GetStatus(r config.Runner) (*Status, error) {
+func GetStatus(r runner.Runner) (*Status, error) {
 	resp, err := web.Get(path.Join(r.Host.GetURL(), "status"))
 	if err != nil {
 		return nil, fmt.Errorf("get status: %v", err)
@@ -40,7 +40,7 @@ func GetStatus(r config.Runner) (*Status, error) {
 }
 
 // ReadSubscriptions return list of node information with the given subscription url.
-func ReadSubscriptions(r config.Runner, sub string) ([]*SubscriptionResp, error) {
+func ReadSubscriptions(r runner.Runner, sub string) ([]*SubscriptionResp, error) {
 	data := map[string]string{"url": sub}
 	jsondata, err := json.Marshal(data)
 	if err != nil {
@@ -59,7 +59,7 @@ func ReadSubscriptions(r config.Runner, sub string) ([]*SubscriptionResp, error)
 }
 
 // GetResult return the newest speed test result.
-func GetResult(r config.Runner) (*Result, error) {
+func GetResult(r runner.Runner) (*Result, error) {
 	resp, err := web.Get(path.Join(r.Host.GetURL(), "getresults"))
 	if err != nil {
 		return nil, fmt.Errorf("get result: %v", err)
@@ -77,7 +77,7 @@ func GetResult(r config.Runner) (*Result, error) {
 // If error happen function will pass error message into status chan.
 // If state is not null it will pass status: ["running" / "done"].
 // If you are calling this method without authorized of given unexpected config it will pass error message.
-func StartTest(r config.Runner, startCFG *StartConfigs, statusChan chan string) {
+func StartTest(r runner.Runner, startCFG *StartConfigs, statusChan chan string) {
 	d, err := json.Marshal(startCFG)
 	if err != nil {
 		e := sendStatus(statusChan, "invalid start config")

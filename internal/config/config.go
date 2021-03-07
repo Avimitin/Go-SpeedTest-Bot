@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"go-speedtest-bot/internal/runner"
 	"io/ioutil"
 	"log"
 	"os"
@@ -42,7 +43,7 @@ func GetToken() string {
 }
 
 // GetAllRunner return all predefine runner
-func GetAllRunner() []*Runner {
+func GetAllRunner() []*runner.Runner {
 	return userSetting.Runner
 }
 
@@ -57,7 +58,7 @@ func ListAllRunners() string {
 }
 
 // GetRunner return a specific runner
-func GetRunner(runnername string) *Runner {
+func GetRunner(runnername string) *runner.Runner {
 	runners := GetAllRunner()
 	for _, f := range runners {
 		if f.Name == runnername {
