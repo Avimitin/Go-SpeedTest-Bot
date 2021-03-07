@@ -8,9 +8,7 @@ import (
 	"go-speedtest-bot/internal/speedtest"
 	"log"
 	"os"
-	"strconv"
 	"strings"
-	"sync/atomic"
 )
 
 var defBot *B
@@ -267,10 +265,6 @@ func cmdSelectDefaultSub(b *B, m *M) {
 	}
 }
 
-var (
-	task = NewJob()
-)
-
 // cmd /schedule
 func cmdSchedule(b *B, m *M) {
 	if len(strings.Fields(m.Text)) < 3 {
@@ -279,13 +273,22 @@ func cmdSchedule(b *B, m *M) {
 		return
 	}
 	args := strings.Fields(m.Text)
+
+	subsFile := config.GetDefaultConfig(args[2])
+	if subsFile == nil {
+		SendT(m.Chat.ID, "config specific not found.")
+		return
+	}
+
+	runner := config.GetRunner(subsFile.DefaultRunner)
+	if runner == nil {
+		SendT(m.Chat.ID,
+			"the runner name specific in default config is not found, please check your config")
+		return
+	}
+
 	switch args[1] {
 	case "start":
-		subsFile := config.GetDefaultConfig(args[2])
-		if subsFile == nil {
-			SendT(m.Chat.ID, "config specific not found.")
-			return
-		}
 		var haveAccess bool
 		for _, admin := range subsFile.Admins {
 			if admin == m.From.ID {
@@ -297,42 +300,25 @@ func cmdSchedule(b *B, m *M) {
 			SendT(m.Chat.ID, "you don't have access to this profile")
 			return
 		}
-		runner := config.GetRunner(subsFile.DefaultRunner)
-		if runner == nil {
-			SendT(m.Chat.ID, "the runner name specific in default config is not found")
+		if runner.IsWorking() {
+			SendT(m.Chat.ID, "runner is working.")
 			return
 		}
 		go StartScheduleJobs(runner, subsFile)
 	case "stop":
-		task.Stop(0)
-		SendT(m.Chat.ID, "Schedule jobs has stopped, but you should checkout backend for it's status.")
+		runner.HangUp()
+		SendT(m.Chat.ID,
+			"Schedule jobs has been stopped, "+
+				"but backend speedtest doesn't stop"+
+				"immediately, so please checkout backend status"+
+				"yourself before starting new test.")
 	case "status":
-		if atomic.LoadInt32(&task.status) == RUNNING {
-			SendT(m.Chat.ID, "jobs running.")
+		if runner.IsPending() {
+			SendT(m.Chat.ID, "runner is pending.")
 			return
 		}
-		SendT(m.Chat.ID, "There is no jobs running in the background.")
+		SendT(m.Chat.ID, "runner are handling speedtest work.")
 	default:
 		SendT(m.Chat.ID, "Unknown parameter.")
 	}
-}
-
-// cmd /set_interval
-func cmdSetInterval(b *B, m *M) {
-	if len(strings.Fields(m.Text)) < 2 {
-		SendT(m.Chat.ID, "Seconds are require as parameters\n"+
-			"Use case: /set_interval 1\n"+
-			"This will let the schedule task to start every 1 seconds.\n"+
-			"But because of the python backend, too frequent request will cause performance problem."+
-			"We recommended you use 300 second as parameter or more.")
-		return
-	}
-	arg := strings.Fields(m.Text)[1]
-	intArg, err := strconv.Atoi(arg)
-	if err != nil {
-		SendT(m.Chat.ID, "Unexpected value: "+arg)
-		return
-	}
-	SetInterval(intArg)
-	SendT(m.Chat.ID, "Interval has set to "+arg+"s")
 }
