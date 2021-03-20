@@ -3,6 +3,10 @@
 		"token": 1234567,
 		"admin": 114514
 	},
+	"pastebin": {
+		"enable": true,
+		"key": "some-key"
+	},
 	"runner": [
 		{
 			"name": "example-runner-1",
