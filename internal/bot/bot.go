@@ -211,8 +211,8 @@ func cmdStartTestWithURL(m *M) {
 // cmd /list_subs
 func cmdListSubs(b *B, m *M) {
 	var text string = "<b>Your subscriptions</b>:\n"
-	defaultconfigs := config.GetAllDefaultConfig()
-	for _, dc := range defaultconfigs {
+	dcs := config.GetAllDefaultConfig()
+	for _, dc := range dcs {
 		for _, admin := range dc.Admins {
 			if m.From.ID == admin {
 				text += fmt.Sprintf(`* <a href="%s">%s</a>\n`, dc.Link, dc.Name)
