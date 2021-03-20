@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"go-speedtest-bot/module/runner"
 	"go-speedtest-bot/module/web"
-	"os"
 	"path"
 	"strings"
 )
@@ -74,48 +73,31 @@ func GetResult(r runner.Runner) (*Result, error) {
 
 // StartTest post a speed test request with the given node config.
 // Because of the blocking backend, This function is designed to be called as goroutine.
-// If error happen function will pass error message into status chan.
-// If state is not null it will pass status: ["running" / "done"].
-// If you are calling this method without authorized of given unexpected config it will pass error message.
-func StartTest(r runner.Runner, startCFG *StartConfigs, statusChan chan string) {
+// If state is not null it will return status: "running" or "done".
+// Error message response will be wrapped into a new error.
+func StartTest(r runner.Runner, startCFG *StartConfigs) (string, error) {
+	r.Activate()
+	defer r.HangUp()
+
 	d, err := json.Marshal(startCFG)
 	if err != nil {
-		e := sendStatus(statusChan, "invalid start config")
-		if e != nil {
-			fmt.Println(e)
-			os.Exit(0)
-		}
-		return
+		return "", errors.New("invalid start config")
 	}
+
 	resp, err := web.JSONPostWithTimeout(path.Join(r.Host.GetURL(), "start"), d, 0)
 	if err != nil {
-		sendStatus(statusChan, fmt.Sprintf("speed test failed, response: %q", resp))
-		return
+		return "", fmt.Errorf("post speedtest start request: %v", err)
 	}
+
 	var state Status
 	err = json.Unmarshal(resp, &state)
 	if err != nil {
-		sendStatus(statusChan, fmt.Sprintf(""))
-		return
+		return "", fmt.Errorf("decode %s: %v", state, err)
 	}
 	if state.State != "" {
-		sendStatus(statusChan, state.State)
-	} else {
-		sendStatus(statusChan, state.Error)
+		return state.State, nil
 	}
-}
-
-func sendStatus(status chan string, content string) error {
-	var err error
-	if status == nil {
-		return errors.New("nil status channel")
-	}
-	defer func() {
-		msg := recover()
-		err = fmt.Errorf("send status: %v", msg)
-	}()
-	status <- content
-	return err
+	return "", errors.New(state.Error)
 }
 
 // IncludeRemarks will select all the configs with the given remarks.
