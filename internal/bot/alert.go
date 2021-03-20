@@ -2,7 +2,7 @@ package bot
 
 import (
 	"fmt"
-	"go-speedtest-bot/internal/speedtest"
+	"go-speedtest-bot/module/speedtest"
 	"time"
 )
 
