@@ -39,12 +39,12 @@ func (r *Runner) CloseChan() {
 	close(r.c)
 }
 
-// IsPending return boolen value about runner is pending or not
+// IsPending return boolean value about runner is pending or not
 func (r *Runner) IsPending() bool {
 	return r.GetRunnerStatus() == Pending
 }
 
-// IsPending return boolen value about runner is working or not
+// IsPending return boolean value about runner is working or not
 func (r *Runner) IsWorking() bool {
 	return r.GetRunnerStatus() == Working
 }
