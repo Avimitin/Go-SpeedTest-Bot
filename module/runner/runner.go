@@ -63,3 +63,14 @@ func (r *Runner) HangUp() {
 func (r *Runner) Activate() {
 	atomic.CompareAndSwapInt32(&r.status, Pending, Working)
 }
+
+// HasAccess testify the given have permission to use this
+// runner or not.
+func (r *Runner) HasAccess(id int) bool {
+	for _, admin := range r.Admins {
+		if id == admin {
+			return true
+		}
+	}
+	return false
+}
