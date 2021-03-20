@@ -2,7 +2,7 @@ package config
 
 import (
 	"encoding/json"
-	"go-speedtest-bot/internal/runner"
+	"go-speedtest-bot/module/runner"
 	"io/ioutil"
 	"log"
 	"os"
@@ -26,10 +26,10 @@ func findConfigFilePath() string {
 
 // LoadConfig is a reusable initialize config function
 func LoadConfig() {
-	path := findConfigFilePath()
-	configFile, err := ioutil.ReadFile(path)
+	configPath := findConfigFilePath()
+	configFile, err := ioutil.ReadFile(configPath)
 	if err != nil {
-		log.Fatalf("read %q: %v", path, err)
+		log.Fatalf("read %q: %v", configPath, err)
 	}
 	err = json.Unmarshal(configFile, &userSetting)
 	if err != nil {
@@ -47,21 +47,11 @@ func GetAllRunner() []*runner.Runner {
 	return userSetting.Runner
 }
 
-// ListAllRunners return all the usable runner name
-func ListAllRunners() string {
-	runners := GetAllRunner()
-	var text string = "available runner:\n"
-	for _, r := range runners {
-		text += r.Name + "\n"
-	}
-	return text
-}
-
 // GetRunner return a specific runner
-func GetRunner(runnername string) *runner.Runner {
+func GetRunner(name string) *runner.Runner {
 	runners := GetAllRunner()
 	for _, f := range runners {
-		if f.Name == runnername {
+		if f.Name == name {
 			return f
 		}
 	}
@@ -69,10 +59,10 @@ func GetRunner(runnername string) *runner.Runner {
 }
 
 // GetDefaultConfig return default speedtest config
-func GetDefaultConfig(configname string) *Default {
+func GetDefaultConfig(name string) *Default {
 	defaultConfig := GetAllDefaultConfig()
 	for _, f := range defaultConfig {
-		if f.Name == configname {
+		if f.Name == name {
 			return f
 		}
 	}
@@ -82,4 +72,17 @@ func GetDefaultConfig(configname string) *Default {
 // GetAllDefaultConfig return all the default config
 func GetAllDefaultConfig() []*Default {
 	return userSetting.DefaultConfig
+}
+
+// GetPasteBinSetting return setting of pastebin.com
+func GetPasteBinKey() string {
+	return userSetting.PB.Key
+}
+
+// PasteBinEnabled return if pastebin feature is enabled
+func PasteBinEnabled() bool {
+	if userSetting.PB == nil {
+		return false
+	}
+	return userSetting.PB.Enable
 }

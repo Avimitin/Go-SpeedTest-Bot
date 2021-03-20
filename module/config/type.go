@@ -1,6 +1,6 @@
 package config
 
-import "go-speedtest-bot/internal/runner"
+import "go-speedtest-bot/module/runner"
 
 // Configuration contains bot, runner configuration
 // at run time; Also store user define default
@@ -9,6 +9,7 @@ type Configuration struct {
 	Global        Global           `json:"global"`
 	Runner        []*runner.Runner `json:"runner"`
 	DefaultConfig []*Default       `json:"default_config"`
+	PB            *PasteBin        `json:"pastebin"`
 }
 
 type Global struct {
@@ -23,4 +24,9 @@ type Default struct {
 	Admins        []int  `json:"admins"`
 	DefaultRunner string `json:"default_runner"`
 	Interval      int    `json:"interval"`
+}
+
+type PasteBin struct {
+	Enable bool   `json:"enable"`
+	Key    string `json:"key"`
 }
