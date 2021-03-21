@@ -142,7 +142,7 @@ func formatResult(r *speedtest.Result) string {
 }
 
 // Run run a test with given configuration
-func Run(requester int, name, sub, method, mode string, include, exclude []string) error {
+func Run(requester int, name, sub, method, mode string, include, exclude []string, errCh chan error) error {
 	r := config.GetRunner(name)
 	if r == nil {
 		return runnerNotFoundErr
@@ -159,6 +159,15 @@ func Run(requester int, name, sub, method, mode string, include, exclude []strin
 		return fmt.Errorf("%s reading %s: %v", name, sub, err)
 	}
 
+	if sub == "" {
+		return errors.New("no subscriptions specific")
+	}
+	if method == "" {
+		return errors.New("no method specific")
+	}
+	if mode == "" {
+		return errors.New("no mode specific")
+	}
 	if len(include) != 0 {
 		nodes = speedtest.IncludeRemarks(nodes, include)
 	}
@@ -167,6 +176,25 @@ func Run(requester int, name, sub, method, mode string, include, exclude []strin
 	}
 
 	cfg := speedtest.NewStartConfigs(method, mode, nodes)
-	go speedtest.StartTest(*r, cfg, make(chan string, 1))
+
+	if errCh == nil {
+		return errors.New("can't pass error in nil channel")
+	}
+
+	go func() {
+		msg, err := speedtest.StartTest(*r, cfg)
+		if err != nil {
+			errCh <- err
+			return
+		}
+
+		if msg == "running" {
+			errCh <- errors.New("backend running other jobs")
+			return
+		}
+
+		errCh <- nil
+	}()
+
 	return nil
 }
