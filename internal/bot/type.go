@@ -30,3 +30,11 @@ type DefaultConfig struct {
 	Include  []string
 	Exclude  []string
 }
+
+type SpeedTestArguments struct {
+	Subs    string   `json:"subs"`
+	Method  string   `json:"method"`
+	Mode    string   `json:"mode"`
+	Exclude []string `json:"exclude"`
+	Include []string `json:"include"`
+}
