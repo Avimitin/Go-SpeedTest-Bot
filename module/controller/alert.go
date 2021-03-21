@@ -2,7 +2,6 @@ package controller
 
 import (
 	"fmt"
-	"go-speedtest-bot/cmd/bot"
 	"go-speedtest-bot/module/speedtest"
 	"time"
 )
@@ -57,7 +56,7 @@ func DelRecord(record string) {
 	}
 }
 
-func AlertHandler(cid int64, results []speedtest.ResultInfo) {
+func AlertHandler(results []speedtest.ResultInfo) string {
 	var text string
 	for _, r := range results {
 		if r.Ping < 0.0001 || r.GPing < 0.0001 {
@@ -69,17 +68,17 @@ func AlertHandler(cid int64, results []speedtest.ResultInfo) {
 		}
 		if HasRecode(r.Remarks) {
 			DelRecord(r.Remarks)
-			text += recoverNotifyLn(r.Remarks, CheckRecord(r.Remarks).OfflineDuration)
+			record := CheckRecord(r.Remarks)
+			text += recoverNotifyLn(r.Remarks, record.OfflineDuration, record.Count)
 		}
 	}
-
-	bot.SendT(cid, text)
+	return text
 }
 
 func alertNotifyLn(remark string) string {
 	return fmt.Sprintf("%s offline\n", remark)
 }
 
-func recoverNotifyLn(remark string, duration time.Duration) string {
-	return fmt.Sprintf("%s has recovered, offline nearly %v\n", remark, duration)
+func recoverNotifyLn(remark string, duration time.Duration, count int) string {
+	return fmt.Sprintf("%s has recovered, offline nearly %v, %d times\n", remark, duration, count)
 }
