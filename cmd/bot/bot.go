@@ -201,6 +201,7 @@ func cmdResult(m *M) {
 			return
 		}
 		SendTF(m.Chat.ID, "result too long, view result at %s", resp)
+		return
 	}
 
 	SendT(m.Chat.ID, text)
