@@ -242,20 +242,20 @@ func schedule(r *runner.Runner, cfg *config.Default, c *Comm) {
 			c.LogCh <- "runner " + r.Name + " finish one test"
 			if state == "running" {
 				c.ErrCh <- errors.New("another jobs running, please start schedule jobs later")
-				goto reset
+				heartBeat.Reset()
+				return
 			}
 
 			re, err := speedtest.GetResult(*r)
 			if err != nil {
 				c.ErrCh <- fmt.Errorf("schedule get result: %v", err)
-				goto reset
+				heartBeat.Reset()
+				return
 			}
 
 			alert := AlertHandler(re.Result)
 			c.Alert <- &alert
-			goto reset
 
-		reset:
 			heartBeat.Reset()
 
 		case <-c.Sig:
