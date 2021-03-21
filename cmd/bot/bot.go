@@ -163,6 +163,7 @@ func cmdReadSub(m *M) {
 		SendT(m.Chat.ID, "Usage: /read_sub <sub> <runner>")
 		return
 	}
+	SendT(m.Chat.ID, "handling sub")
 	url := args[0]
 	name := args[1]
 	resp, err := controller.ReadSubscriptions(
