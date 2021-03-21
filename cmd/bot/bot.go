@@ -269,7 +269,7 @@ func cmdSchedule(m *M) {
 	args := getArgs(m)
 	if args == nil || len(args) < 2 {
 		SendP(m.Chat.ID, "Require parameters like: <code>start/stop/status</code>\n"+
-			"Use case: /schedule start <CONFIG_NAME>", "HTML")
+			"Use case: /schedule start <code><CONFIG_NAME></code>", "HTML")
 		return
 	}
 
