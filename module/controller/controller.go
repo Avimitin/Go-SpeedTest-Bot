@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"go-speedtest-bot/module/config"
+	"go-speedtest-bot/module/heartbeat"
 	"go-speedtest-bot/module/runner"
 	"go-speedtest-bot/module/speedtest"
+	"time"
 )
 
 var (
@@ -197,4 +199,76 @@ func Run(requester int, name, sub, method, mode string, include, exclude []strin
 	}()
 
 	return nil
+}
+
+func Schedule(requester int, cfg *config.Default, c *Comm) error {
+	r := config.GetRunner(cfg.DefaultRunner)
+	if r == nil {
+		return runnerNotFoundErr
+	}
+	if !r.HasAccess(requester) {
+		return permDenied
+	}
+	if cfg == nil {
+		return errors.New("configuration are empty")
+	}
+	if c.ErrCh == nil || c.LogCh == nil {
+		return errors.New("no communicate channel opened")
+	}
+	go schedule(r, cfg, c)
+	return nil
+}
+
+func schedule(r *runner.Runner, cfg *config.Default, c *Comm) {
+	heartBeat := heartbeat.NewHeartBeat(cfg.Interval)
+	resultCh := make(chan string)
+	for {
+		select {
+		case <-heartBeat.C():
+			tc, err := newTestConfig(r, cfg)
+			if err != nil {
+				c.ErrCh <- err
+				return
+			}
+
+			heartBeat.Stop()
+
+			go func() {
+				resp, err := speedtest.StartTest(*r, tc)
+				if err != nil {
+					c.ErrCh <- fmt.Errorf("%s run schedule test: %v", r.Name, err)
+					c.LogCh <- r.Name + " schedule job got error, recovered"
+					heartBeat.Reset()
+					return
+				}
+				resultCh <- resp
+			}()
+			c.LogCh <- r.Name + " start new jobs"
+		case state := <-resultCh:
+			c.LogCh <- "runner " + r.Name + " finish one test"
+			if state == "running" {
+				c.ErrCh <- errors.New("another jobs running, please start schedule jobs later")
+				return
+			}
+			// TODO: handle result
+			heartBeat.Reset()
+		case <-c.Sig:
+			c.LogCh <- r.Name + " exit schedule jobs"
+			return
+		}
+	}
+}
+
+func newTestConfig(r *runner.Runner, cfg *config.Default) (*speedtest.StartConfigs, error) {
+	var retry int
+	nodes, err := speedtest.ReadSubscriptions(*r, cfg.Link)
+	for err != nil {
+		if retry > 5 {
+			return nil, fmt.Errorf("retry after 5 times: %v", err)
+		}
+		time.Sleep(5 * time.Second)
+		retry++
+		nodes, err = speedtest.ReadSubscriptions(*r, cfg.Link)
+	}
+	return speedtest.NewStartConfigs("ST_ASYNC", "TCP_PING", nodes), nil
 }
