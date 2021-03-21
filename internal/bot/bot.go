@@ -89,10 +89,10 @@ func Listen(debug bool, logInfo bool, clean bool) {
 }
 
 // CMDHandler handle all the command
-func CMDHandler(bot *B, msg *M) {
+func CMDHandler(msg *M) {
 	if msg.IsCommand() {
 		if cmd, ok := Commands[msg.Command()]; ok {
-			cmd(bot, msg)
+			cmd(msg)
 		}
 	}
 }
@@ -106,7 +106,7 @@ func getArgs(m *M) []string {
 }
 
 // cmd /start
-func cmdStart(b *B, m *M) {
+func cmdStart(m *M) {
 	text := "Here is a bot who can help you manage all your proxy."
 	SendT(m.Chat.ID, text)
 }
@@ -209,7 +209,7 @@ func cmdStartTestWithURL(m *M) {
 }
 
 // cmd /list_subs
-func cmdListSubs(b *B, m *M) {
+func cmdListSubs(m *M) {
 	var text string = "<b>Your subscriptions</b>:\n"
 	dcs := config.GetAllDefaultConfig()
 	for _, dc := range dcs {
@@ -224,7 +224,7 @@ func cmdListSubs(b *B, m *M) {
 }
 
 // cmd /schedule
-func cmdSchedule(b *B, m *M) {
+func cmdSchedule(m *M) {
 	if len(strings.Fields(m.Text)) < 3 {
 		SendP(m.Chat.ID, "Require parameters like: <code>start/stop/status</code>\n"+
 			"Use case: /schedule start <CONFIG_NAME>", "HTML")

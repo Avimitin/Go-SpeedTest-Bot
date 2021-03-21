@@ -5,39 +5,18 @@ import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 type B = tgbotapi.BotAPI
 type M = tgbotapi.Message
 
-type CMDFunc func(*B, *M)
+type CMDFunc func(*M)
 type CMD = map[string]CMDFunc
 
-type admins map[int]interface{}
-
-// Auth will check if the given id is an admin or not
-func (a admins) Auth(id int) bool {
-	_, ok := a[id]
-	return ok
-}
-
-// NewAdmin load a list of admin
-func NewAdmin() admins {
-	return make(admins)
-}
-
 var Commands = CMD{
-	"start":        cmdStart,
-	"ping":         cmdPing,
-	"status":       cmdStatus,
-	"read_sub":     cmdReadSub,
-	"result":       cmdResult,
-	"run_url":      cmdStartTestWithURL,
-	"list_subs":    cmdListSubs,
-	"set_default":  cmdSelectDefaultSub,
-	"set_def_mode": cmdSetDefaultModeAndMethod,
-	"run_def":      cmdRunDefault,
-	"schedule":     cmdSchedule,
-	"set_interval": cmdSetInterval,
-	"set_exin":     cmdSetDefaultExcludeOrInclude,
-	"set_chat":     cmdSetDefaultChat,
-	"show_def":     cmdShowDefault,
-	"add_admin":    cmdAddAdmin,
+	"start":     cmdStart,
+	"ping":      cmdPing,
+	"status":    cmdStatus,
+	"read_sub":  cmdReadSub,
+	"result":    cmdResult,
+	"run_url":   cmdStartTestWithURL,
+	"list_subs": cmdListSubs,
+	"schedule":  cmdSchedule,
 }
 
 var CfgFlags = map[string]string{
