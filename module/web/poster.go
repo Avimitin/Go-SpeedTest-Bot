@@ -26,7 +26,7 @@ func Post(url string, d urlPak.Values) ([]byte, error) {
 // JSONPost will post a JSON request with the url and data given by user.
 // it will return error if timeout 30 seconds.
 func JSONPost(url string, data []byte) ([]byte, error) {
-	return JSONPostWithTimeout(url, data, 30)
+	return JSONPostWithTimeout(url, data, 30*time.Second)
 }
 
 // JSONPostWithTimeout will post a JSON request with the url and data given by user,
