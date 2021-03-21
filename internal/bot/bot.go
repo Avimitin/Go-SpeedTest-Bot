@@ -63,7 +63,6 @@ func Listen(debug bool, logInfo bool, clean bool) {
 	defBot.Debug = debug
 	log.Println("Authorized on account", defBot.Self.UserName)
 
-	admins := NewAdmin()
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 	updates, err := defBot.GetUpdatesChan(u)
@@ -82,9 +81,8 @@ func Listen(debug bool, logInfo bool, clean bool) {
 		if update.Message == nil {
 			continue
 		}
-		if admins.Auth(update.Message.From.ID) {
-			go CMDHandler(defBot, update.Message)
-		}
+
+		go CMDHandler(update.Message)
 	}
 }
 
