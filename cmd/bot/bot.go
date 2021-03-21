@@ -193,7 +193,7 @@ func cmdResult(m *M) {
 
 	if config.PasteBinEnabled() {
 		resp, err := pastebin.PasteWithExpiry(
-			config.GetPasteBinKey(), "nodes test result", &text, "10m",
+			config.GetPasteBinKey(), "nodes test result", &text, "10M",
 		)
 		if err != nil {
 			SendErr(m.Chat.ID, err)
