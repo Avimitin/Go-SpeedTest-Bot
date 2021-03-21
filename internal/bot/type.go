@@ -19,12 +19,6 @@ var Commands = CMD{
 	"schedule":  cmdSchedule,
 }
 
-var CfgFlags = map[string]string{
-	"-u": "exp",
-	"-M": "TCP_PING",
-	"-m": "ST_ASYNC",
-}
-
 // DefaultConfig contains all the default speed test setting.
 type DefaultConfig struct {
 	Remarks  string
