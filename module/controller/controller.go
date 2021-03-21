@@ -201,6 +201,7 @@ func Run(requester int, name, sub, method, mode string, include, exclude []strin
 	return nil
 }
 
+// Schedule is like cron jobs, running test with user predefine configuration
 func Schedule(requester int, cfg *config.Default, c *Comm) error {
 	r := config.GetRunner(cfg.DefaultRunner)
 	if r == nil {
@@ -228,7 +229,7 @@ func schedule(r *runner.Runner, cfg *config.Default, c *Comm) {
 			tc, err := newTestConfig(r, cfg)
 			if err != nil {
 				c.ErrCh <- err
-				return
+				continue
 			}
 
 			heartBeat.Stop()
@@ -248,7 +249,7 @@ func schedule(r *runner.Runner, cfg *config.Default, c *Comm) {
 			c.LogCh <- "runner " + r.Name + " finish one test"
 			if state == "running" {
 				c.ErrCh <- errors.New("another jobs running, please start schedule jobs later")
-				return
+				continue
 			}
 			// TODO: handle result
 			heartBeat.Reset()
