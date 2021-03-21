@@ -310,7 +310,7 @@ func cmdSchedule(m *M) {
 		rc.UnRegister(def.Name)
 
 		SendT(m.Chat.ID, "jobs has exit at local, but the remote host maybe still running"+
-			"jobs, please check out the backend for its status")
+			" jobs, please check out the backend for its status")
 	case "status":
 		if !rc.Exist(def.Name) {
 			SendT(m.Chat.ID, "runner is pending.")
