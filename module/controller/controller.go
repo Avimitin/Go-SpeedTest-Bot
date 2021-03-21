@@ -234,25 +234,30 @@ func schedule(r *runner.Runner, cfg *config.Default, c *Comm) {
 
 			heartBeat.Stop()
 
-			go func() {
-				resp, err := speedtest.StartTest(*r, tc)
-				if err != nil {
-					c.ErrCh <- fmt.Errorf("%s run schedule test: %v", r.Name, err)
-					c.LogCh <- r.Name + " schedule job got error, recovered"
-					heartBeat.Reset()
-					return
-				}
-				resultCh <- resp
-			}()
+			go startScheduleTest(r, tc, c, heartBeat, resultCh)
+
 			c.LogCh <- r.Name + " start new jobs"
+
 		case state := <-resultCh:
 			c.LogCh <- "runner " + r.Name + " finish one test"
 			if state == "running" {
 				c.ErrCh <- errors.New("another jobs running, please start schedule jobs later")
-				continue
+				goto reset
 			}
-			// TODO: handle result
+
+			re, err := speedtest.GetResult(*r)
+			if err != nil {
+				c.ErrCh <- fmt.Errorf("schedule get result: %v", err)
+				goto reset
+			}
+
+			alert := AlertHandler(re.Result)
+			c.Alert <- &alert
+			goto reset
+
+		reset:
 			heartBeat.Reset()
+
 		case <-c.Sig:
 			c.LogCh <- r.Name + " exit schedule jobs"
 			return
@@ -272,4 +277,15 @@ func newTestConfig(r *runner.Runner, cfg *config.Default) (*speedtest.StartConfi
 		nodes, err = speedtest.ReadSubscriptions(*r, cfg.Link)
 	}
 	return speedtest.NewStartConfigs("ST_ASYNC", "TCP_PING", nodes), nil
+}
+
+func startScheduleTest(r *runner.Runner, tc *speedtest.StartConfigs, c *Comm, beat *heartbeat.HeartBeat, resultCh chan string) {
+	resp, err := speedtest.StartTest(*r, tc)
+	if err != nil {
+		c.ErrCh <- fmt.Errorf("%s run schedule test: %v", r.Name, err)
+		c.LogCh <- r.Name + " schedule job got error, recovered"
+		beat.Reset()
+		return
+	}
+	resultCh <- resp
 }
