@@ -50,7 +50,7 @@ func SendP(cid int64, text string, format string) {
 
 // SendTF send text with formatted content
 func SendTF(cid int64, content string, args ...interface{}) {
-	SendT(cid, fmt.Sprintf(content, args))
+	SendT(cid, fmt.Sprintf(content, args...))
 }
 
 // SendErr send error message to given chat id
