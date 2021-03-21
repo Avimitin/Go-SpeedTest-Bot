@@ -6,13 +6,12 @@ import (
 	"fmt"
 	"go-speedtest-bot/module/runner"
 	"go-speedtest-bot/module/web"
-	"path"
 	"strings"
 )
 
 // Ping will test if the given host is accessible or not
 func Ping(r runner.Runner) bool {
-	resp, err := web.Get(path.Join(r.Host.GetURL(), "getversion"))
+	resp, err := web.Get(r.Host.GetURL() + "/" + "getversion")
 	if err != nil {
 		return false
 	}
@@ -26,7 +25,7 @@ func Ping(r runner.Runner) bool {
 
 // GetStatus is used for fetching backend status
 func GetStatus(r runner.Runner) (*Status, error) {
-	resp, err := web.Get(path.Join(r.Host.GetURL(), "status"))
+	resp, err := web.Get(r.Host.GetURL() + "/" + "status")
 	if err != nil {
 		return nil, fmt.Errorf("get status: %v", err)
 	}
@@ -45,7 +44,7 @@ func ReadSubscriptions(r runner.Runner, sub string) ([]*SubscriptionResp, error)
 	if err != nil {
 		return nil, fmt.Errorf("%s not valid", sub)
 	}
-	resp, err := web.JSONPost(path.Join(r.Host.GetURL(), "readsubscriptions"), jsondata)
+	resp, err := web.JSONPost(r.Host.GetURL()+"/"+"readsubscriptions", jsondata)
 	if err != nil {
 		return nil, fmt.Errorf("post sub: %v", err)
 	}
@@ -59,7 +58,7 @@ func ReadSubscriptions(r runner.Runner, sub string) ([]*SubscriptionResp, error)
 
 // GetResult return the newest speed test result.
 func GetResult(r runner.Runner) (*Result, error) {
-	resp, err := web.Get(path.Join(r.Host.GetURL(), "getresults"))
+	resp, err := web.Get(r.Host.GetURL() + "/" + "getresults")
 	if err != nil {
 		return nil, fmt.Errorf("get result: %v", err)
 	}
@@ -84,7 +83,7 @@ func StartTest(r runner.Runner, startCFG *StartConfigs) (string, error) {
 		return "", errors.New("invalid start config")
 	}
 
-	resp, err := web.JSONPostWithTimeout(path.Join(r.Host.GetURL(), "start"), d, 0)
+	resp, err := web.JSONPostWithTimeout(r.Host.GetURL()+"/"+"start", d, 0)
 	if err != nil {
 		return "", fmt.Errorf("post speedtest start request: %v", err)
 	}
