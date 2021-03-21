@@ -1,7 +1,8 @@
-package bot
+package controller
 
 import (
 	"fmt"
+	"go-speedtest-bot/cmd/bot"
 	"go-speedtest-bot/module/speedtest"
 	"time"
 )
@@ -72,7 +73,7 @@ func AlertHandler(cid int64, results []speedtest.ResultInfo) {
 		}
 	}
 
-	SendT(cid, text)
+	bot.SendT(cid, text)
 }
 
 func alertNotifyLn(remark string) string {
