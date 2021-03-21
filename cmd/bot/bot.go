@@ -19,10 +19,13 @@ var (
 
 // NewBot return a bot instance
 func NewBot() *B {
+	config.LoadConfig()
+
 	bot, err := tgbotapi.NewBotAPI(config.GetToken())
 	if err != nil {
 		log.Fatalf("initialize bot: %v", err)
 	}
+
 	return bot
 }
 
@@ -294,16 +297,7 @@ func cmdSchedule(m *M) {
 		// if no error register the channel
 		rc.Register(def.Name, c)
 
-		go func() {
-			for {
-				select {
-				case e := <-c.ErrCh:
-					SendErr(m.Chat.ID, e)
-				case l := <-c.LogCh:
-					log.Println(l)
-				}
-			}
-		}()
+		go ScheduleJobsNotify(m.Chat.ID, c)
 	case "stop":
 		c := rc.C(def.Name)
 		if c == nil {
