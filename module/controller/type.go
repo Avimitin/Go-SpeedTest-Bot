@@ -11,9 +11,9 @@ type Comm struct {
 // NewComm return a pointer to Comm struct
 func NewComm() *Comm {
 	return &Comm{
-		LogCh: make(chan string),
-		ErrCh: make(chan error),
-		Sig:   make(chan int32),
-		Alert: make(chan *string),
+		LogCh: make(chan string, 1),
+		ErrCh: make(chan error, 1),
+		Sig:   make(chan int32, 1),
+		Alert: make(chan *string, 1),
 	}
 }
