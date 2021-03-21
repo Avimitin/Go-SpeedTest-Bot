@@ -59,6 +59,9 @@ func (rc *RunnerComm) Exist(n string) bool {
 func (rc *RunnerComm) Register(n string, c *controller.Comm) {
 	rc.s.Lock()
 	defer rc.s.Unlock()
+	if rc.m == nil {
+		rc.m = make(map[string]*controller.Comm)
+	}
 	rc.m[n] = c
 }
 
