@@ -1,4 +1,4 @@
-package bot
+package main
 
 func main() {
 	Listen(false)
