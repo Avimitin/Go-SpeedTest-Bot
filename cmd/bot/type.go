@@ -13,14 +13,15 @@ type CMDFunc func(*M)
 type CMD = map[string]CMDFunc
 
 var Commands = CMD{
-	"start":     cmdStart,
-	"ping":      cmdPing,
-	"status":    cmdStatus,
-	"read_sub":  cmdReadSub,
-	"result":    cmdResult,
-	"run_url":   cmdStartTestWithURL,
-	"list_subs": cmdListSubs,
-	"schedule":  cmdSchedule,
+	"start":      cmdStart,
+	"ping":       cmdPing,
+	"status":     cmdStatus,
+	"read_sub":   cmdReadSub,
+	"result":     cmdResult,
+	"run_url":    cmdStartTestWithURL,
+	"list_subs":  cmdListSubs,
+	"schedule":   cmdSchedule,
+	"listrunner": cmdListRunner,
 }
 
 // DefaultConfig contains all the default speed test setting.
