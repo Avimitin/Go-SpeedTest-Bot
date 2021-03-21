@@ -298,6 +298,7 @@ func cmdSchedule(m *M) {
 		rc.Register(def.Name, c)
 
 		go ScheduleJobsNotify(m.Chat.ID, c)
+		SendT(m.Chat.ID, "Jobs started")
 	case "stop":
 		c := rc.C(def.Name)
 		if c == nil {
