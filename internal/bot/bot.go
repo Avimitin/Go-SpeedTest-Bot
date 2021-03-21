@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"encoding/json"
 	"fmt"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go-speedtest-bot/module/config"
@@ -199,11 +200,45 @@ func cmdResult(m *M) {
 // cmd /run
 func cmdStartTestWithURL(m *M) {
 	args := getArgs(m)
-	if args == nil {
-		SendT(m.Chat.ID, "Usage: /run <runner> url=<url> method=<method> mode=<mode>")
+	if args == nil || len(args) < 2 {
+		SendT(m.Chat.ID, "Usage: /run <runner> <json-args>")
 		return
 	}
-	SendT(m.Chat.ID, "function under maintain")
+	var rname = args[0]
+	var jargs = args[1]
+
+	var parsedArgs *SpeedTestArguments
+	err := json.Unmarshal([]byte(jargs), &parsedArgs)
+	if err != nil {
+		SendErr(m.Chat.ID, fmt.Errorf("argument not valid: %v", err))
+		return
+	}
+
+	var errCh = make(chan error)
+	err = controller.Run(
+		m.From.ID,
+		rname,
+		parsedArgs.Subs,
+		parsedArgs.Method,
+		parsedArgs.Mode,
+		parsedArgs.Include,
+		parsedArgs.Exclude,
+		errCh,
+	)
+	if err != nil {
+		SendErr(m.Chat.ID, err)
+		return
+	}
+	go func() {
+		err := <-errCh
+		if err != nil {
+			SendErr(m.Chat.ID, err)
+			return
+		}
+		SendT(m.Chat.ID, rname+" finished a job")
+	}()
+
+	SendT(m.Chat.ID, "request success, checkout result by /result")
 }
 
 // cmd /list_subs
