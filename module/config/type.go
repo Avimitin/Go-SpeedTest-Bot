@@ -26,6 +26,15 @@ type Default struct {
 	Interval      int    `json:"interval"`
 }
 
+func (def *Default) HasAccess(id int) bool {
+	for _, admin := range def.Admins {
+		if admin == id {
+			return true
+		}
+	}
+	return false
+}
+
 type PasteBin struct {
 	Enable bool   `json:"enable"`
 	Key    string `json:"key"`

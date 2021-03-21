@@ -12,7 +12,10 @@ import (
 	"strings"
 )
 
-var defBot *B
+var (
+	defBot *B
+	rc     = new(RunnerComm)
+)
 
 // NewBot return a bot instance
 func NewBot() *B {
@@ -59,9 +62,11 @@ func SendErr(cid int64, err error) {
 // If debug, bot will enable debug mode.
 // If logInfo, program will print all the message.
 // If clean, program will clean all the out of date message.
-func Listen(debug bool, logInfo bool, clean bool) {
+func Listen(clean bool) {
 	defBot = NewBot()
-	defBot.Debug = debug
+	if os.Getenv("debug_bot") == "true" {
+		defBot.Debug = true
+	}
 	log.Println("Authorized on account", defBot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)
@@ -258,58 +263,65 @@ func cmdListSubs(m *M) {
 
 // cmd /schedule
 func cmdSchedule(m *M) {
-	if len(strings.Fields(m.Text)) < 3 {
+	args := getArgs(m)
+	if args == nil || len(args) < 2 {
 		SendP(m.Chat.ID, "Require parameters like: <code>start/stop/status</code>\n"+
 			"Use case: /schedule start <CONFIG_NAME>", "HTML")
 		return
 	}
-	args := strings.Fields(m.Text)
 
-	subsFile := config.GetDefaultConfig(args[2])
-	if subsFile == nil {
+	def := config.GetDefaultConfig(args[1])
+	if def == nil {
 		SendT(m.Chat.ID, "config specific not found.")
 		return
 	}
-
-	runner := config.GetRunner(subsFile.DefaultRunner)
-	if runner == nil {
-		SendT(m.Chat.ID,
-			"the runner name specific in default config is not found, please check your config")
-		return
+	if !def.HasAccess(m.From.ID) {
+		SendT(m.Chat.ID, "you don't have access to this config")
 	}
 
-	switch args[1] {
+	switch args[0] {
 	case "start":
-		var haveAccess bool
-		for _, admin := range subsFile.Admins {
-			if admin == m.From.ID {
-				haveAccess = true
-				break
+		if rc.Exist(def.Name) {
+			SendT(m.Chat.ID, "there is another schedule jobs running.")
+		}
+
+		c := controller.NewComm()
+		err := controller.Schedule(m.From.ID, def, c)
+		if err != nil {
+			SendErr(m.Chat.ID, err)
+			return
+		}
+		// if no error register the channel
+		rc.Register(def.Name, c)
+
+		go func() {
+			for {
+				select {
+				case e := <-c.ErrCh:
+					SendErr(m.Chat.ID, e)
+				case l := <-c.LogCh:
+					log.Println(l)
+				}
 			}
-		}
-		if !haveAccess {
-			SendT(m.Chat.ID, "you don't have access to this profile")
-			return
-		}
-		if runner.IsWorking() {
-			SendTF(m.Chat.ID, "runner %s is handling other work", runner.Name)
-			return
-		}
-		go StartScheduleJobs(runner, subsFile)
+		}()
 	case "stop":
-		runner.HangUp()
-		runner.CloseChan()
-		SendT(m.Chat.ID,
-			"Schedule jobs has been stopped, "+
-				"but backend speedtest doesn't stop"+
-				"immediately, so please checkout backend status"+
-				"yourself before starting new test.")
+		c := rc.C(def.Name)
+		if c == nil {
+			SendT(m.Chat.ID, "runner specific is not running schedule jobs now")
+			return
+		}
+
+		c.Sig <- 0
+		rc.UnRegister(def.Name)
+
+		SendT(m.Chat.ID, "jobs has exit at local, but the remote host maybe still running"+
+			"jobs, please check out the backend for its status")
 	case "status":
-		if runner.IsPending() {
+		if !rc.Exist(def.Name) {
 			SendT(m.Chat.ID, "runner is pending.")
 			return
 		}
-		SendT(m.Chat.ID, "runner are handling speedtest work.")
+		SendT(m.Chat.ID, "runner are handling schedule test jobs.")
 	default:
 		SendT(m.Chat.ID, "Unknown parameter.")
 	}
