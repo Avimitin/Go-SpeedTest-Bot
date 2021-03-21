@@ -45,7 +45,7 @@ func JSONPostWithTimeout(url string, data []byte, timeout time.Duration) ([]byte
 		return nil, fmt.Errorf("new request %s: %v", url, err)
 	}
 
-	req.Header.Set("content-type", "application/json")
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
