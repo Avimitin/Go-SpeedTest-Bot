@@ -254,7 +254,9 @@ func schedule(r *runner.Runner, cfg *config.Default, c *Comm) {
 			}
 
 			alert := AlertHandler(re.Result)
-			c.Alert <- &alert
+			if len(alert) != 0 {
+				c.Alert <- &alert
+			}
 
 			heartBeat.Reset()
 
