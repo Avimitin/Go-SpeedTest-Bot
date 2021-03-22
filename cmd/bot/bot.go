@@ -34,7 +34,10 @@ func SendT(cid int64, text string) {
 	msg := tgbotapi.NewMessage(cid, text)
 	_, err := defBot.Send(msg)
 	if err != nil {
-		log.Printf("send %q: %v", text[:10]+"...", err)
+		if len(text) > 10 {
+			text = text[:10] + "..."
+		}
+		log.Printf("send %q : %v", text, err)
 	}
 }
 
