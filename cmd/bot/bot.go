@@ -331,3 +331,22 @@ func cmdSchedule(m *M) {
 		SendT(m.Chat.ID, "Unknown parameter.")
 	}
 }
+
+func cmdListFailed(m *M) {
+	var header = "current offline nodes:\n\n"
+	var text string
+
+	diag := controller.CheckDiag()
+	for k, v := range diag {
+		if v.Exist {
+			text += k
+		}
+	}
+
+	if len(text) == 0 {
+		SendT(m.Chat.ID, "no nodes offline")
+		return
+	}
+
+	SendT(m.Chat.ID, header+text)
+}
