@@ -47,6 +47,9 @@ func SendP(cid int64, text string, format string) {
 	msg.ParseMode = format
 	_, err := defBot.Send(msg)
 	if err != nil {
+		if len(text) > 10 {
+			text = text[:10] + "..."
+		}
 		log.Printf("send %q: %v", text[:10]+"...", err)
 	}
 }
@@ -101,7 +104,9 @@ func Listen(clean bool) {
 // CMDHandler handle all the command
 func CMDHandler(msg *M) {
 	if msg.IsCommand() {
-		if cmd, ok := Commands[msg.Command()]; ok {
+		cmd := msg.Command()
+		log.Printf("[%s]%s", msg.From.FirstName, cmd)
+		if cmd, ok := Commands[cmd]; ok {
 			cmd(msg)
 		}
 	}
