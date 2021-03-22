@@ -11,15 +11,7 @@
 |    `/result`    |                 Return the latest result                 |
 |   `/run_url`    |         Start a test with given subscription URL         |
 |  `/list_subs`   | Return list of subscriptions you store in local configs  |
-| `/set_default`  |   Set the default subscriptions URL with given remarks   |
-|   `/set_chat`   |       Set the default chat room for sending result       |
-| `/set_def_mode` |           Set the default test method and mode           |
-|   `/run_def`    |              Run a test with default config              |
 |   `/schedule`   |                    Manage timed tasks                    |
-| `/set_interval` |         Set interval between each schedule test          |
-|   `/set_exin`   |         Set default exclude and include remarks          |
-|   `/show_def`   |         Show all the default settings                    |
-|   `/add_admin`  |         Grant bot permission to someone                  |
 
 ## More details
 
@@ -28,38 +20,46 @@
 This command will only return parsed text message like:
 
 ```reStructuredText
-台湾<-上海01 [O3][0.5]: | ls: 0.00% | lp: 43.08 ms | gp: 162.70 ms
-台湾<-广东01 [O3][0.2][FAKEIEPL]: | ls: 0.00% | lp: 11.49 ms | gp: 289.30 ms
-台湾<-广东04 [O3][1.0]: | ls: 0.00% | lp: 13.26 ms | gp: 247.44 ms
-台湾<-江苏01 [O2][1.0]: | ls: 0.00% | lp: 44.67 ms | gp: 330.06 ms
+台湾<-上海01 [O3][0.5]: | loss: 0.00% | localping: 43.08 ms | googleping: 162.70 ms
+台湾<-广东01 [O3][0.2]: | loss: 0.00% | localping: 11.49 ms | googleping: 289.30 ms
+台湾<-广东04 [O3][1.0]: | loss: 0.00% | localping: 13.26 ms | googleping: 247.44 ms
+台湾<-江苏01 [O2][1.0]: | loss: 0.00% | localping: 44.67 ms | googleping: 330.06 ms
 ```
 
-In this case, ls aka loss, lp aka local ping, gp aka google ping.
+Enable and configure pastebin options at config.json to make
+result can store in https://pastebin.com.
 
 ### CMD `/list_subs`
 
-This command will return subscriptions you define in `configs/subs.ini` .
-
-### CMD `/set_default`
-
-You can only set default URL that define in `configs/subs.ini` .
-
-### CMD `/set_def_mod`
-
-Method usable: `ST_ASYNC | SOCKET | SPEED_TEST_NET | FAST`
-
-Mode usable: `TCP_PING | WEB_PAGE_SIMULATION | ALL`
-
-For more detail, check out backend [README](https://github.com/NyanChanMeow/SSRSpeed#test-modes) .
+This command will return subscriptions you define in `config.json` .
 
 ### CMD `/schedule`
 
-Before starting schedule jobs, you should set default remarks with command `/set_default` and default chat room with command `/set_chat` .
+schedule will read the default profile that define in config.json
 
-### CMD `/set_chat` 
+## Configuration
 
-Command `/set_chat` now only support group or user's id.
+### Where
 
-### CMD `/add_admin`
+Config should store in `~/.config/spt_bot/config.json`
+Or you can specific the env `SPT_CFG_PATH` to the path that store
+the config.json.
 
-Command `/add_admin` can only add user when you reply to someone. Will only add user who have username. 
+If you are using docker, bot will read config.json in `/data`, so you
+can run command like this:
+
+```bash
+docker run -d -v /path/to/config:/data spt-bot:0.1
+```
+
+Using volumes can easily maintain and backup your configuration.
+
+### How
+
+Example configuration like below, you can mock it at 
+[config.json](../config/config.json):
+
+### References
+
+See [references.md](./references.md)
+
