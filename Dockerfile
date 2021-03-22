@@ -2,7 +2,7 @@
 FROM golang:1.15.10-alpine AS build
 COPY . /go/src/go-spt-bot
 WORKDIR /go/src/go-spt-bot
-RUN go build -o /bin/spt-bot ./cmd/bot
+RUN go build -o /bin/spt-bot -ldflags="-w -s" ./cmd/bot
 
 # RUN
 FROM alpine:3
