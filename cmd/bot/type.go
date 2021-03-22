@@ -22,6 +22,7 @@ var Commands = CMD{
 	"list_subs":  cmdListSubs,
 	"schedule":   cmdSchedule,
 	"listrunner": cmdListRunner,
+	"listdiag":   cmdListFailed,
 }
 
 // DefaultConfig contains all the default speed test setting.
