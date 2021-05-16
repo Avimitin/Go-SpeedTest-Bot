@@ -2,7 +2,9 @@
 
 ## Why?
 
-To have a `secret.json` file that can be picked up by the app to have access control over who is able to access the web api. If `secret.json` is not found, is considered as unprotected. But all the function will not be affect. So you can choose if you don't want the patch.
+The speed-test server code was assigned to be running locally. However, since the bot and the backend may run separately, it is necessary to apply a security patch to the backend.
+
+The patch will detect the `secret.json` file and switch behavior to ensure code compatibility. You can consider the file as a trigger. If the `secret.json` file does not exist, the webserver will assume that protection is not turn on. And all the functionality is still the same.
 
 ## How to apply patch
 
